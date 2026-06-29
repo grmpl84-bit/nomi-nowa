@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Nomi</string>
+    <string name="no_reminders">Brak przypomnień!</string>
+    <string name="tap_mic">Dotknij mikrofon aby dodać</string>
+    <string name="voice_title">Przypomnienie głosowe</string>
+    <string name="listening">Słucham…</string>
+    <string name="tap_to_speak">Dotknij aby mówić</string>
+    <string name="mic_needed">Potrzebny dostęp do mikrofonu</string>
+    <string name="allow_mic">Zezwól na mikrofon</string>
+    <string name="reminder_label">Przypomnienie</string>
+    <string name="when_remind">Kiedy przypomnieć?</string>
+    <string name="retry">Ponów</string>
+    <string name="save">Zapisz</string>
+    <string name="done">Gotowe</string>
+    <string name="delete">Usuń</string>
+    <string name="settings">Ustawienia</string>
+    <string name="about">O aplikacji</string>
+    <string name="version">Nomi v1.0.0</string>
+    <string name="made_for">Stworzone dla umysłów z ADHD</string>
+    <string name="widget_desc">Szybkie przypomnienie głosowe</string>
+    <string name="widget_tap">Dotknij aby mówić</string>
+    <string name="language">Język</string>
+    <string name="choose_language">Wybierz język</string>
+    <string name="lang_polish">Polski</string>
+    <string name="lang_english">Angielski</string>
+    <string name="lang_german">Niemiecki</string>
+    <string name="lang_system">Domyślny systemowy</string>
+    <string name="history">Historia</string>
+    <string name="today">Dziś</string>
+    <string name="total">Łącznie</string>
+    <string name="level">Poziom</string>
+    <string name="no_completed">Brak ukończonych zadań</string>
+    <string name="complete_first">Wykonaj swoje pierwsze przypomnienie!</string>
+    <string name="recently_completed">Ostatnio ukończone</string>
+    <string name="completed_at">Ukończono: %s</string>
+    <string name="snooze_title">Przesuń przypomnienie</string>
+    <string name="cancel">Anuluj</string>
+    <string name="tomorrow">Jutro</string>
+    <string name="hold_to_record">Przytrzymaj aby nagrać</string>
+    <string name="release_to_stop">Puść aby zakończyć</string>
+    <string name="overdue">Zaległe!</string>
+    <string name="reschedule">Przesuń</string>
+    <string name="detected_time">Rozpoznano:</string>
+</resources>
