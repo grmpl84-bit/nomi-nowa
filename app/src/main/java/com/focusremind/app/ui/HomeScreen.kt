@@ -8,7 +8,6 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.os.Environment
 import android.os.PowerManager
 import android.provider.Settings
 import android.speech.RecognitionListener
@@ -27,6 +26,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -182,37 +182,42 @@ fun HomeScreen(onAddReminder: () -> Unit, onOpenSettings: () -> Unit, onOpenHist
     var parsedResult by remember { mutableStateOf<TimeParser.Result?>(null) }
     var selectedMinutes by remember { mutableIntStateOf(0) }
 
-    // Photo picker state
+    // Photo picker state - use rememberSaveable to survive process death
+    var photoReminderId by rememberSaveable { mutableStateOf(-1L) }
     var photoReminder by remember { mutableStateOf<Reminder?>(null) }
     var showPhotoOptions by remember { mutableStateOf(false) }
 
+    // Camera photo URI - persisted across process death
+    var tempCameraUriString by rememberSaveable { mutableStateOf<String?>(null) }
+    val tempCameraUri: Uri? = tempCameraUriString?.let { Uri.parse(it) }
+
     // Camera photo launcher
-    var tempCameraUri by remember { mutableStateOf<Uri?>(null) }
     val cameraLauncher = rememberLauncherForActivityResult(
         contract = androidx.activity.result.contract.ActivityResultContracts.TakePicture()
     ) { success ->
-        if (success && tempCameraUri != null && photoReminder != null) {
+        if (success && tempCameraUriString != null && photoReminderId > 0) {
             scope.launch {
-                dao.updatePhoto(photoReminder!!.id, tempCameraUri.toString())
+                dao.updatePhoto(photoReminderId, tempCameraUriString!!)
             }
         }
-        photoReminder = null
+        photoReminderId = -1L
+        tempCameraUriString = null
     }
 
     // Gallery photo picker launcher
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = androidx.activity.result.contract.ActivityResultContracts.GetContent()
     ) { uri ->
-        if (uri != null && photoReminder != null) {
+        if (uri != null && photoReminderId > 0) {
             // Take persistable permission so we can read it later
             try {
                 context.contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
             } catch (_: Exception) {}
             scope.launch {
-                dao.updatePhoto(photoReminder!!.id, uri.toString())
+                dao.updatePhoto(photoReminderId, uri.toString())
             }
         }
-        photoReminder = null
+        photoReminderId = -1L
     }
 
     // Snooze dialog state
@@ -349,22 +354,18 @@ fun HomeScreen(onAddReminder: () -> Unit, onOpenSettings: () -> Unit, onOpenHist
                     FilledTonalButton(
                         onClick = {
                             showPhotoOptions = false
-                            try {
-                                val photoFile = File(
-                                    context.getExternalFilesDir(Environment.DIRECTORY_PICTURES),
-                                    "nomi_${System.currentTimeMillis()}.jpg"
-                                )
-                                val uri = FileProvider.getUriForFile(
-                                    context,
-                                    "${context.packageName}.fileprovider",
-                                    photoFile
-                                )
-                                tempCameraUri = uri
-                                cameraLauncher.launch(uri)
-                            } catch (e: Exception) {
-                                // Fallback - try gallery instead
-                                galleryLauncher.launch("image/*")
-                            }
+                            photoReminderId = photoReminder!!.id
+                            // Create the pictures directory if it doesn't exist
+                            val picturesDir = File(context.filesDir, "pictures")
+                            if (!picturesDir.exists()) picturesDir.mkdirs()
+                            val photoFile = File(picturesDir, "nomi_${System.currentTimeMillis()}.jpg")
+                            val uri = FileProvider.getUriForFile(
+                                context,
+                                "${context.packageName}.fileprovider",
+                                photoFile
+                            )
+                            tempCameraUriString = uri.toString()
+                            cameraLauncher.launch(uri)
                         },
                         modifier = Modifier.fillMaxWidth()
                     ) {
@@ -376,6 +377,7 @@ fun HomeScreen(onAddReminder: () -> Unit, onOpenSettings: () -> Unit, onOpenHist
                     FilledTonalButton(
                         onClick = {
                             showPhotoOptions = false
+                            photoReminderId = photoReminder!!.id
                             galleryLauncher.launch("image/*")
                         },
                         modifier = Modifier.fillMaxWidth()
