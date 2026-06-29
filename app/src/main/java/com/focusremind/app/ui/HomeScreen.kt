@@ -1,6 +1,8 @@
 package com.focusremind.app.ui
 
 import android.Manifest
+import android.app.DatePickerDialog
+import android.app.TimePickerDialog
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -176,6 +178,10 @@ fun HomeScreen(onAddReminder: () -> Unit, onOpenSettings: () -> Unit, onOpenHist
     var parsedResult by remember { mutableStateOf<TimeParser.Result?>(null) }
     var selectedMinutes by remember { mutableIntStateOf(0) }
 
+    // Photo picker state
+    var photoReminder by remember { mutableStateOf<Reminder?>(null) }
+    var showPhotoOptions by remember { mutableStateOf(false) }
+
     // Snooze dialog state
     var showSnoozeDialog by remember { mutableStateOf(false) }
     var snoozeReminder by remember { mutableStateOf<Reminder?>(null) }
@@ -185,6 +191,7 @@ fun HomeScreen(onAddReminder: () -> Unit, onOpenSettings: () -> Unit, onOpenHist
     var editReminder by remember { mutableStateOf<Reminder?>(null) }
     var editTitle by remember { mutableStateOf("") }
     var editMinutes by remember { mutableIntStateOf(0) }
+    var editCustomDateTime by remember { mutableStateOf<Long?>(null) }
 
     val recognizer = remember { SpeechRecognizer.createSpeechRecognizer(context) }
     DisposableEffect(Unit) { onDispose { recognizer.destroy() } }
@@ -201,9 +208,10 @@ fun HomeScreen(onAddReminder: () -> Unit, onOpenSettings: () -> Unit, onOpenHist
         recognizedText = ""
         parsedResult = null
         selectedMinutes = 0
+        val speechLocale = getSpeechRecognitionLocale(context)
         val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
             putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-            putExtra(RecognizerIntent.EXTRA_LANGUAGE, "pl-PL")
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE, speechLocale)
             putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
             // Auto-stop after 1.5s of silence
             putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 1500L)
@@ -296,6 +304,39 @@ fun HomeScreen(onAddReminder: () -> Unit, onOpenSettings: () -> Unit, onOpenHist
         )
     }
 
+    // Photo options dialog
+    if (showPhotoOptions && photoReminder != null) {
+        AlertDialog(
+            onDismissRequest = { showPhotoOptions = false },
+            icon = { Icon(Icons.Default.CameraAlt, null) },
+            title = { Text(stringResource(R.string.add_photo)) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(stringResource(R.string.photo_description), style = MaterialTheme.typography.bodyMedium)
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        stringResource(R.string.photo_info),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            },
+            confirmButton = {
+                Button(onClick = {
+                    // In a real implementation, this would launch camera/gallery intent
+                    // For now, mark as photo attached with placeholder
+                    scope.launch {
+                        dao.updatePhoto(photoReminder!!.id, "photo_placeholder")
+                    }
+                    showPhotoOptions = false
+                }) { Text(stringResource(R.string.take_photo)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showPhotoOptions = false }) { Text(stringResource(R.string.cancel)) }
+            }
+        )
+    }
+
     // Edit dialog
     if (showEditDialog && editReminder != null) {
         AlertDialog(
@@ -309,34 +350,81 @@ fun HomeScreen(onAddReminder: () -> Unit, onOpenSettings: () -> Unit, onOpenHist
                         label = { Text(stringResource(R.string.reminder_label)) },
                         modifier = Modifier.fillMaxWidth()
                     )
+
+                    // Show current trigger time
+                    val currentTriggerFormatted = remember(editReminder, editMinutes, editCustomDateTime) {
+                        val triggerTime = when {
+                            editCustomDateTime != null -> editCustomDateTime!!
+                            editMinutes > 0 -> System.currentTimeMillis() + editMinutes * 60_000L
+                            else -> editReminder!!.triggerAt
+                        }
+                        SimpleDateFormat("EEEE, d MMM yyyy, HH:mm", Locale.getDefault()).format(Date(triggerTime))
+                    }
+                    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer)) {
+                        Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Text("\u23F0", style = MaterialTheme.typography.titleMedium)
+                            Spacer(Modifier.width(8.dp))
+                            Column {
+                                Text(stringResource(R.string.notification_fires_at), style = MaterialTheme.typography.labelSmall)
+                                Text(currentTriggerFormatted, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+                            }
+                        }
+                    }
+
                     Text(stringResource(R.string.when_remind), style = MaterialTheme.typography.titleSmall)
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         listOf(5 to "5 min", 15 to "15 min", 30 to "30 min").forEach { (min, label) ->
                             FilterChip(
-                                selected = editMinutes == min,
-                                onClick = { editMinutes = min },
+                                selected = editMinutes == min && editCustomDateTime == null,
+                                onClick = { editMinutes = min; editCustomDateTime = null },
                                 label = { Text(label) }
                             )
                         }
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        listOf(60 to "1h", 120 to "2h", 1440 to "Jutro").forEach { (min, label) ->
+                        listOf(60 to "1h", 120 to "2h", 1440 to stringResource(R.string.tomorrow)).forEach { (min, label) ->
                             FilterChip(
-                                selected = editMinutes == min,
-                                onClick = { editMinutes = min },
+                                selected = editMinutes == min && editCustomDateTime == null,
+                                onClick = { editMinutes = min; editCustomDateTime = null },
                                 label = { Text(label) }
                             )
                         }
+                    }
+
+                    // Custom date & time picker button
+                    OutlinedButton(
+                        onClick = {
+                            val cal = Calendar.getInstance()
+                            DatePickerDialog(context, { _, year, month, day ->
+                                TimePickerDialog(context, { _, hour, minute ->
+                                    val chosen = Calendar.getInstance().apply {
+                                        set(Calendar.YEAR, year)
+                                        set(Calendar.MONTH, month)
+                                        set(Calendar.DAY_OF_MONTH, day)
+                                        set(Calendar.HOUR_OF_DAY, hour)
+                                        set(Calendar.MINUTE, minute)
+                                        set(Calendar.SECOND, 0)
+                                    }
+                                    editCustomDateTime = chosen.timeInMillis
+                                    editMinutes = 0
+                                }, cal.get(Calendar.HOUR_OF_DAY), cal.get(Calendar.MINUTE), true).show()
+                            }, cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH)).show()
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(Icons.Default.CalendarMonth, null, Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text(stringResource(R.string.pick_date_time))
                     }
                 }
             },
             confirmButton = {
                 Button(
                     onClick = {
-                        val newTrigger = if (editMinutes > 0) {
-                            System.currentTimeMillis() + editMinutes * 60_000L
-                        } else {
-                            editReminder!!.triggerAt
+                        val newTrigger = when {
+                            editCustomDateTime != null -> editCustomDateTime!!
+                            editMinutes > 0 -> System.currentTimeMillis() + editMinutes * 60_000L
+                            else -> editReminder!!.triggerAt
                         }
                         scope.launch {
                             dao.update(editReminder!!.id, editTitle, newTrigger)
@@ -555,6 +643,7 @@ fun HomeScreen(onAddReminder: () -> Unit, onOpenSettings: () -> Unit, onOpenHist
                             editReminder = reminder
                             editTitle = reminder.title
                             editMinutes = 0
+                            editCustomDateTime = null
                             showEditDialog = true
                         },
                         onSnooze = {
@@ -566,6 +655,10 @@ fun HomeScreen(onAddReminder: () -> Unit, onOpenSettings: () -> Unit, onOpenHist
                                 dao.delete(reminder.id)
                                 ReminderAlarmScheduler.cancel(context, reminder.id)
                             }
+                        },
+                        onAddPhoto = {
+                            photoReminder = reminder
+                            showPhotoOptions = true
                         }
                     )
                 }
@@ -576,16 +669,16 @@ fun HomeScreen(onAddReminder: () -> Unit, onOpenSettings: () -> Unit, onOpenHist
 }
 
 @Composable
-fun ReminderCard(reminder: Reminder, onComplete: () -> Unit, onEdit: () -> Unit, onSnooze: () -> Unit, onDelete: () -> Unit) {
+fun ReminderCard(reminder: Reminder, onComplete: () -> Unit, onEdit: () -> Unit, onSnooze: () -> Unit, onDelete: () -> Unit, onAddPhoto: () -> Unit) {
     val overdueText = stringResource(R.string.overdue)
     val timeText = remember(reminder.triggerAt) {
         val diff = reminder.triggerAt - System.currentTimeMillis()
         when {
-            diff < 0 -> "⚠️ $overdueText"
+            diff < 0 -> "\u26A0\uFE0F $overdueText"
             diff < 60_000 -> "< 1 min"
             diff < 3_600_000 -> "${diff / 60_000} min"
             diff < 86_400_000 -> "${diff / 3_600_000}h ${(diff % 3_600_000) / 60_000}m"
-            else -> SimpleDateFormat("EEE d MMM HH:mm", Locale("pl")).format(Date(reminder.triggerAt))
+            else -> SimpleDateFormat("EEE d MMM HH:mm", Locale.getDefault()).format(Date(reminder.triggerAt))
         }
     }
 
@@ -593,33 +686,102 @@ fun ReminderCard(reminder: Reminder, onComplete: () -> Unit, onEdit: () -> Unit,
 
     Card(
         Modifier.fillMaxWidth(),
-        colors = if (isOverdue) CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f))
-        else CardDefaults.cardColors()
+        colors = if (isOverdue) CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.4f))
+        else CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f)),
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp),
+        shape = RoundedCornerShape(16.dp)
     ) {
         Column(Modifier.padding(16.dp)) {
-            Text(reminder.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-            Spacer(Modifier.height(4.dp))
-            Text(timeText, style = MaterialTheme.typography.bodySmall,
-                color = if (isOverdue) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                // Color accent dot
+                Box(
+                    modifier = Modifier
+                        .size(10.dp)
+                        .clip(CircleShape)
+                        .background(
+                            if (isOverdue) MaterialTheme.colorScheme.error
+                            else MaterialTheme.colorScheme.primary
+                        )
+                )
+                Spacer(Modifier.width(10.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(reminder.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                    Spacer(Modifier.height(2.dp))
+                    Text(
+                        timeText,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = if (isOverdue) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
+            // Show photo if attached
+            if (!reminder.photoUri.isNullOrEmpty()) {
+                Spacer(Modifier.height(8.dp))
+                Card(
+                    Modifier.fillMaxWidth().height(120.dp),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text("\uD83D\uDCF7 ${stringResource(R.string.photo_attached)}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
+                    }
+                }
+            }
+
             Spacer(Modifier.height(12.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                FilledTonalButton(onClick = onComplete) {
+                // Green "Wykonane" button with checkmark
+                Button(
+                    onClick = onComplete,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF4CAF50),
+                        contentColor = Color.White
+                    )
+                ) {
                     Icon(Icons.Default.Check, null, Modifier.size(18.dp))
                     Spacer(Modifier.width(4.dp))
-                    Text(stringResource(R.string.done))
+                    Text(stringResource(R.string.completed_btn))
                 }
-                OutlinedButton(onClick = onSnooze) {
-                    Icon(Icons.Default.Snooze, null, Modifier.size(18.dp))
-                    Spacer(Modifier.width(4.dp))
-                    Text(stringResource(R.string.reschedule))
-                }
+                // Edit button (pencil)
                 OutlinedButton(onClick = onEdit) {
                     Icon(Icons.Default.Edit, null, Modifier.size(18.dp))
                 }
+                // Photo button
+                OutlinedButton(onClick = onAddPhoto) {
+                    Icon(Icons.Default.CameraAlt, null, Modifier.size(18.dp))
+                }
+                // Delete button
                 OutlinedButton(onClick = onDelete) {
                     Icon(Icons.Default.Delete, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.error)
                 }
             }
         }
+    }
+}
+
+
+/**
+ * Returns the appropriate speech recognition locale based on app language setting.
+ * Maps app language codes to full BCP-47 locale tags for SpeechRecognizer.
+ */
+private fun getSpeechRecognitionLocale(context: Context): String {
+    val prefs = context.getSharedPreferences("focusremind_settings", Context.MODE_PRIVATE)
+    // Check app-level locale override first
+    val appLocales = androidx.appcompat.app.AppCompatDelegate.getApplicationLocales()
+    val langCode = if (!appLocales.isEmpty) {
+        appLocales[0]?.language ?: ""
+    } else {
+        // Use system locale
+        Locale.getDefault().language
+    }
+    return when (langCode) {
+        "pl" -> "pl-PL"
+        "en" -> "en-US"
+        "de" -> "de-DE"
+        "fr" -> "fr-FR"
+        "it" -> "it-IT"
+        "es" -> "es-ES"
+        "ru" -> "ru-RU"
+        else -> "pl-PL" // default fallback
     }
 }
