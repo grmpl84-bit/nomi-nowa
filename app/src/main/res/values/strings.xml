@@ -64,6 +64,7 @@
     <string name="notification_fires_at">Powiadomienie pojawi się:</string>
     <string name="add_photo">Dodaj zdjęcie</string>
     <string name="take_photo">Zrób zdjęcie</string>
+    <string name="from_gallery">Wybierz z galerii</string>
     <string name="photo_attached">Zdjęcie załączone</string>
     <string name="photo_description">Dodaj zdjęcie do tego przypomnienia, np. produkt w sklepie.</string>
     <string name="photo_info">Zdjęcie będzie widoczne na karcie przypomnienia.</string>

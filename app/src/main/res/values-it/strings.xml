@@ -64,6 +64,7 @@
     <string name="notification_fires_at">La notifica apparirà:</string>
     <string name="add_photo">Aggiungi foto</string>
     <string name="take_photo">Scatta foto</string>
+    <string name="from_gallery">Scegli dalla galleria</string>
     <string name="photo_attached">Foto allegata</string>
     <string name="photo_description">Aggiungi una foto a questo promemoria, es. un prodotto in negozio.</string>
     <string name="photo_info">La foto sarà visibile sulla scheda del promemoria.</string>
