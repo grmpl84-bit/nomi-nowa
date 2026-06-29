@@ -5,8 +5,11 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.os.Build
 import android.util.Log
+import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.os.LocaleListCompat
 import androidx.room.Room
 import com.focusremind.app.data.FocusRemindDatabase
+import java.util.Locale
 
 class FocusRemindApp : Application() {
 
@@ -20,6 +23,33 @@ class FocusRemindApp : Application() {
             .fallbackToDestructiveMigration()
             .build()
         createNotificationChannel()
+        autoDetectLanguage()
+    }
+
+    /**
+     * Auto-detect system language on first launch.
+     * If the system language matches one of our supported languages,
+     * set the app to use that language automatically.
+     */
+    private fun autoDetectLanguage() {
+        val prefs = getSharedPreferences("nomi_prefs", MODE_PRIVATE)
+        if (prefs.getBoolean("language_auto_detected", false)) return
+
+        // Only auto-detect if user hasn't manually set a language
+        val appLocales = AppCompatDelegate.getApplicationLocales()
+        if (!appLocales.isEmpty) return
+
+        val systemLang = Locale.getDefault().language
+        val supportedLanguages = listOf("pl", "en", "de", "fr", "it", "es", "ru")
+
+        if (systemLang in supportedLanguages) {
+            AppCompatDelegate.setApplicationLocales(
+                LocaleListCompat.forLanguageTags(systemLang)
+            )
+            Log.d("FocusRemindApp", "Auto-detected system language: $systemLang")
+        }
+
+        prefs.edit().putBoolean("language_auto_detected", true).apply()
     }
 
     /**
