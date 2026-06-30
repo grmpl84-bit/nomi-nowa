@@ -44,11 +44,13 @@ class ReminderWorker(
 
         Log.d(TAG, "WorkManager backup fired for reminder $reminderId: $title")
 
-        // Check if notification already shown by AlarmReceiver
-        val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        val alreadyShown = nm.activeNotifications.any { it.id == reminderId.toInt() }
-        if (alreadyShown) {
-            Log.d(TAG, "Notification already shown by AlarmReceiver, skipping")
+        // Check if AlarmReceiver already fired (using SharedPreferences flag - reliable)
+        val alarmFlags = context.getSharedPreferences("nomi_alarm_flags", Context.MODE_PRIVATE)
+        val alreadyFired = alarmFlags.getBoolean("fired_$reminderId", false)
+        if (alreadyFired) {
+            Log.d(TAG, "AlarmReceiver already fired for reminder $reminderId, skipping backup")
+            // Clean up the flag
+            alarmFlags.edit().remove("fired_$reminderId").apply()
             return Result.success()
         }
 

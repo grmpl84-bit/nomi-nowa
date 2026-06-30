@@ -41,6 +41,10 @@ class AlarmReceiver : BroadcastReceiver() {
 
         Log.d(TAG, "🔔 AlarmReceiver.onReceive FIRED! reminder=$reminderId, title='$title'")
 
+        // Mark as fired IMMEDIATELY — so WorkManager backup knows not to duplicate
+        context.getSharedPreferences("nomi_alarm_flags", Context.MODE_PRIVATE)
+            .edit().putBoolean("fired_$reminderId", true).apply()
+
         // Check notification permission on Android 13+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS)
