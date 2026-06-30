@@ -56,16 +56,18 @@ fun OnboardingScreen(onFinished: () -> Unit) {
                     // === PAGE 0: LANGUAGE SELECTION (no translations needed - flags speak for themselves) ===
                     0 -> LanguageSelectionPage(
                         onLanguageSelected = { langCode ->
-                            // Save flag BEFORE locale change (Activity will restart!)
-                            prefs.edit().putBoolean("onboarding_language_chosen", true).apply()
-                            // Apply language immediately so next pages are translated
+                            // Use commit() NOT apply() — apply() is async and may not finish
+                            // before Activity restarts from setApplicationLocales()!
+                            prefs.edit().putBoolean("onboarding_language_chosen", true).commit()
                             if (langCode.isNotEmpty()) {
                                 AppCompatDelegate.setApplicationLocales(
                                     LocaleListCompat.forLanguageTags(langCode)
                                 )
                             }
-                            // Note: setApplicationLocales() restarts Activity.
-                            // After restart, languageAlreadyChosen=true → pager starts at page 1.
+                            // setApplicationLocales() WILL restart the Activity when locale changes.
+                            // After restart, pager initialPage = 1 (language already chosen flag).
+                            // But if user picks SAME language (no restart), we navigate manually:
+                            scope.launch { pagerState.animateScrollToPage(1) }
                         }
                     )
 

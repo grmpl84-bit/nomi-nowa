@@ -35,12 +35,16 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.focusremind.app.FocusRemindApp
 import com.focusremind.app.R
 import com.focusremind.app.data.Reminder
@@ -189,49 +193,48 @@ fun HomeScreen(onAddReminder: () -> Unit, onOpenSettings: () -> Unit, onOpenHist
 
     // Camera photo URI - persisted across process death
     var tempCameraUriString by rememberSaveable { mutableStateOf<String?>(null) }
-    val tempCameraUri: Uri? = tempCameraUriString?.let { Uri.parse(it) }
 
-    // Camera photo launcher
+    // Camera photo launcher — handles result after user accepts/rejects photo
     val cameraLauncher = rememberLauncherForActivityResult(
         contract = androidx.activity.result.contract.ActivityResultContracts.TakePicture()
     ) { success ->
-        if (success && tempCameraUriString != null && photoReminderId > 0) {
-            scope.launch {
-                dao.updatePhoto(photoReminderId, tempCameraUriString!!)
+        try {
+            val savedUriString = tempCameraUriString
+            val savedId = photoReminderId
+            if (success && savedUriString != null && savedId > 0L) {
+                scope.launch { dao.updatePhoto(savedId, savedUriString) }
             }
-        }
-        photoReminderId = -1L
-        tempCameraUriString = null
-    }
-
-    // Camera permission launcher — requests CAMERA permission then launches camera
-    val cameraPermissionLauncher = rememberLauncherForActivityResult(
-        contract = androidx.activity.result.contract.ActivityResultContracts.RequestPermission()
-    ) { granted ->
-        if (granted && tempCameraUriString != null) {
-            cameraLauncher.launch(Uri.parse(tempCameraUriString!!))
-        } else {
-            // Permission denied — reset state
+        } catch (_: Exception) {} // never crash on photo result
+        finally {
+            photoReminderId = -1L
             tempCameraUriString = null
         }
     }
 
-    // Gallery photo picker launcher (using OpenDocument for persistent access)
+    // Camera permission launcher — asks for CAMERA permission, then fires camera
+    val cameraPermissionLauncher = rememberLauncherForActivityResult(
+        contract = androidx.activity.result.contract.ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted && tempCameraUriString != null) {
+            try { cameraLauncher.launch(Uri.parse(tempCameraUriString!!)) } catch (_: Exception) {}
+        } else {
+            tempCameraUriString = null
+        }
+    }
+
+    // Gallery picker — copies selected image to internal storage (reliable across all devices)
+    // Content URIs from GetContent are NOT persistable, so we copy the file immediately
     val galleryLauncher = rememberLauncherForActivityResult(
-        contract = androidx.activity.result.contract.ActivityResultContracts.OpenDocument()
+        contract = androidx.activity.result.contract.ActivityResultContracts.GetContent()
     ) { uri ->
-        if (uri != null && photoReminderId > 0) {
-            // Take persistable permission so we can read it later
-            try {
-                context.contentResolver.takePersistableUriPermission(
-                    uri, Intent.FLAG_GRANT_READ_URI_PERMISSION
-                )
-            } catch (_: Exception) {}
+        val savedId = photoReminderId
+        photoReminderId = -1L
+        if (uri != null && savedId > 0L) {
             scope.launch {
-                dao.updatePhoto(photoReminderId, uri.toString())
+                val localPath = copyUriToInternalStorage(context, uri)
+                if (localPath != null) dao.updatePhoto(savedId, localPath)
             }
         }
-        photoReminderId = -1L
     }
 
     // Snooze dialog state
@@ -401,7 +404,7 @@ fun HomeScreen(onAddReminder: () -> Unit, onOpenSettings: () -> Unit, onOpenHist
                         onClick = {
                             showPhotoOptions = false
                             photoReminderId = photoReminder!!.id
-                            galleryLauncher.launch(arrayOf("image/*"))
+                            galleryLauncher.launch("image/*")
                         },
                         modifier = Modifier.fillMaxWidth()
                     ) {
@@ -798,17 +801,25 @@ fun ReminderCard(reminder: Reminder, onComplete: () -> Unit, onEdit: () -> Unit,
                 }
             }
 
-            // Show photo if attached
+            // Show photo if attached — display actual image with Coil
             if (!reminder.photoUri.isNullOrEmpty()) {
                 Spacer(Modifier.height(8.dp))
-                Card(
-                    Modifier.fillMaxWidth().height(120.dp),
-                    shape = RoundedCornerShape(8.dp)
-                ) {
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("\uD83D\uDCF7 ${stringResource(R.string.photo_attached)}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
-                    }
-                }
+                AsyncImage(
+                    model = ImageRequest.Builder(LocalContext.current)
+                        .data(
+                            // Support both absolute file paths and content:// URIs
+                            if (reminder.photoUri.startsWith("/")) File(reminder.photoUri)
+                            else Uri.parse(reminder.photoUri)
+                        )
+                        .crossfade(true)
+                        .build(),
+                    contentDescription = stringResource(R.string.photo_attached),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(160.dp)
+                        .clip(RoundedCornerShape(10.dp)),
+                    contentScale = ContentScale.Crop
+                )
             }
 
             Spacer(Modifier.height(12.dp))
@@ -849,6 +860,23 @@ fun ReminderCard(reminder: Reminder, onComplete: () -> Unit, onEdit: () -> Unit,
     }
 }
 
+
+/**
+ * Copies a content URI image to app's internal storage.
+ * Returns the absolute file path, or null on failure.
+ * This is necessary because GetContent URIs are NOT persistable across app restarts.
+ */
+private fun copyUriToInternalStorage(context: Context, uri: Uri): String? {
+    return try {
+        val picturesDir = File(context.filesDir, "pictures")
+        if (!picturesDir.exists()) picturesDir.mkdirs()
+        val destFile = File(picturesDir, "nomi_${System.currentTimeMillis()}.jpg")
+        context.contentResolver.openInputStream(uri)?.use { input ->
+            destFile.outputStream().use { output -> input.copyTo(output) }
+        }
+        if (destFile.exists() && destFile.length() > 0) destFile.absolutePath else null
+    } catch (_: Exception) { null }
+}
 
 /**
  * Returns the appropriate speech recognition locale based on app language setting.
