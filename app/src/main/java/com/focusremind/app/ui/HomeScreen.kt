@@ -204,14 +204,28 @@ fun HomeScreen(onAddReminder: () -> Unit, onOpenSettings: () -> Unit, onOpenHist
         tempCameraUriString = null
     }
 
-    // Gallery photo picker launcher
+    // Camera permission launcher — requests CAMERA permission then launches camera
+    val cameraPermissionLauncher = rememberLauncherForActivityResult(
+        contract = androidx.activity.result.contract.ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted && tempCameraUriString != null) {
+            cameraLauncher.launch(Uri.parse(tempCameraUriString!!))
+        } else {
+            // Permission denied — reset state
+            tempCameraUriString = null
+        }
+    }
+
+    // Gallery photo picker launcher (using OpenDocument for persistent access)
     val galleryLauncher = rememberLauncherForActivityResult(
-        contract = androidx.activity.result.contract.ActivityResultContracts.GetContent()
+        contract = androidx.activity.result.contract.ActivityResultContracts.OpenDocument()
     ) { uri ->
         if (uri != null && photoReminderId > 0) {
             // Take persistable permission so we can read it later
             try {
-                context.contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                context.contentResolver.takePersistableUriPermission(
+                    uri, Intent.FLAG_GRANT_READ_URI_PERMISSION
+                )
             } catch (_: Exception) {}
             scope.launch {
                 dao.updatePhoto(photoReminderId, uri.toString())
@@ -365,7 +379,16 @@ fun HomeScreen(onAddReminder: () -> Unit, onOpenSettings: () -> Unit, onOpenHist
                                 photoFile
                             )
                             tempCameraUriString = uri.toString()
-                            cameraLauncher.launch(uri)
+                            // Check if CAMERA permission is already granted
+                            if (androidx.core.content.ContextCompat.checkSelfPermission(
+                                    context, Manifest.permission.CAMERA
+                                ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+                            ) {
+                                cameraLauncher.launch(uri)
+                            } else {
+                                // Request permission — callback will launch camera if granted
+                                cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+                            }
                         },
                         modifier = Modifier.fillMaxWidth()
                     ) {
@@ -378,7 +401,7 @@ fun HomeScreen(onAddReminder: () -> Unit, onOpenSettings: () -> Unit, onOpenHist
                         onClick = {
                             showPhotoOptions = false
                             photoReminderId = photoReminder!!.id
-                            galleryLauncher.launch("image/*")
+                            galleryLauncher.launch(arrayOf("image/*"))
                         },
                         modifier = Modifier.fillMaxWidth()
                     ) {
