@@ -36,7 +36,11 @@ private const val TOTAL_PAGES = 5
 @Composable
 fun OnboardingScreen(onFinished: () -> Unit) {
     val context = LocalContext.current
-    val pagerState = rememberPagerState(pageCount = { TOTAL_PAGES })
+    val prefs = remember { context.getSharedPreferences("nomi_prefs", Context.MODE_PRIVATE) }
+    // If language was already chosen (Activity restarted after locale change), skip to page 1
+    val languageAlreadyChosen = remember { prefs.getBoolean("onboarding_language_chosen", false) }
+    val startPage = if (languageAlreadyChosen) 1 else 0
+    val pagerState = rememberPagerState(initialPage = startPage, pageCount = { TOTAL_PAGES })
     val scope = rememberCoroutineScope()
 
     Scaffold { padding ->
@@ -52,13 +56,16 @@ fun OnboardingScreen(onFinished: () -> Unit) {
                     // === PAGE 0: LANGUAGE SELECTION (no translations needed - flags speak for themselves) ===
                     0 -> LanguageSelectionPage(
                         onLanguageSelected = { langCode ->
+                            // Save flag BEFORE locale change (Activity will restart!)
+                            prefs.edit().putBoolean("onboarding_language_chosen", true).apply()
                             // Apply language immediately so next pages are translated
                             if (langCode.isNotEmpty()) {
                                 AppCompatDelegate.setApplicationLocales(
                                     LocaleListCompat.forLanguageTags(langCode)
                                 )
                             }
-                            scope.launch { pagerState.animateScrollToPage(1) }
+                            // Note: setApplicationLocales() restarts Activity.
+                            // After restart, languageAlreadyChosen=true → pager starts at page 1.
                         }
                     )
 
@@ -123,8 +130,10 @@ fun OnboardingScreen(onFinished: () -> Unit) {
                         buttonText = stringResource(R.string.onboarding_done_button),
                         showSettingsIcon = false,
                         onButtonClick = {
-                            context.getSharedPreferences("nomi_prefs", Context.MODE_PRIVATE)
-                                .edit().putBoolean("onboarding_done", true).apply()
+                            prefs.edit()
+                                .putBoolean("onboarding_done", true)
+                                .putBoolean("onboarding_language_chosen", false)
+                                .apply()
                             onFinished()
                         }
                     )
