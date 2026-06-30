@@ -36,7 +36,8 @@ fun AppNavigation(startWithVoice: Boolean = false) {
             composable("settings") {
                 SettingsScreen(
                     onBack = { nav.popBackStack() },
-                    onOpenSoundPicker = { nav.navigate("sounds") }
+                    onOpenSoundPicker = { nav.navigate("sounds") },
+                    onShowOnboarding = { showOnboarding = true }
                 )
             }
             composable("sounds") {

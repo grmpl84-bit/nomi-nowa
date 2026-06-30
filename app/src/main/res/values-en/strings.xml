@@ -64,6 +64,7 @@
     <string name="notification_fires_at">Notification will fire:</string>
     <string name="add_photo">Add photo</string>
     <string name="take_photo">Take photo</string>
+    <string name="from_gallery">Choose from gallery</string>
     <string name="photo_attached">Photo attached</string>
     <string name="photo_description">Add a photo to this reminder, e.g. a product in a store.</string>
     <string name="photo_info">The photo will be visible on the reminder card.</string>
@@ -92,4 +93,6 @@
     <string name="later">Later</string>
     <string name="edit_reminder">Edit reminder</string>
     <string name="reminder_saved">Saved!</string>
+    <string name="show_setup_guide">Show setup guide</string>
+    <string name="show_setup_guide_desc">Show the configuration screens again</string>
 </resources>

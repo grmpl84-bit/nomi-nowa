@@ -116,8 +116,12 @@ object ReminderAlarmScheduler {
             .putString("reminder_title", reminder.title)
             .build()
 
+        // +60s delay: gives AlarmReceiver time to fire first and set the flag.
+        // WorkManager is only a BACKUP for phones that kill AlarmManager.
+        val backupDelay = maxOf(delay, 0) + 60_000L
+
         val workRequest = OneTimeWorkRequestBuilder<ReminderWorker>()
-            .setInitialDelay(maxOf(delay, 0), TimeUnit.MILLISECONDS)
+            .setInitialDelay(backupDelay, TimeUnit.MILLISECONDS)
             .setInputData(data)
             .addTag("reminder_${reminder.id}")
             .build()
@@ -143,6 +147,10 @@ object ReminderAlarmScheduler {
         // Cancel WorkManager
         WorkManager.getInstance(context)
             .cancelUniqueWork("reminder_$reminderId")
+
+        // Clean up alarm flag
+        context.getSharedPreferences("nomi_alarm_flags", Context.MODE_PRIVATE)
+            .edit().remove("fired_$reminderId").apply()
 
         Log.d(TAG, "Cancelled alarm+work for reminder $reminderId")
     }

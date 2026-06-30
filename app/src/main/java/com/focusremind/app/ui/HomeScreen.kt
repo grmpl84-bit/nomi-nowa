@@ -13,6 +13,7 @@ import android.provider.Settings
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -25,6 +26,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -38,6 +40,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.FileProvider
 import com.focusremind.app.FocusRemindApp
 import com.focusremind.app.R
 import com.focusremind.app.data.Reminder
@@ -47,6 +50,7 @@ import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import kotlinx.coroutines.launch
+import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -178,9 +182,43 @@ fun HomeScreen(onAddReminder: () -> Unit, onOpenSettings: () -> Unit, onOpenHist
     var parsedResult by remember { mutableStateOf<TimeParser.Result?>(null) }
     var selectedMinutes by remember { mutableIntStateOf(0) }
 
-    // Photo picker state
+    // Photo picker state - use rememberSaveable to survive process death
+    var photoReminderId by rememberSaveable { mutableStateOf(-1L) }
     var photoReminder by remember { mutableStateOf<Reminder?>(null) }
     var showPhotoOptions by remember { mutableStateOf(false) }
+
+    // Camera photo URI - persisted across process death
+    var tempCameraUriString by rememberSaveable { mutableStateOf<String?>(null) }
+    val tempCameraUri: Uri? = tempCameraUriString?.let { Uri.parse(it) }
+
+    // Camera photo launcher
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = androidx.activity.result.contract.ActivityResultContracts.TakePicture()
+    ) { success ->
+        if (success && tempCameraUriString != null && photoReminderId > 0) {
+            scope.launch {
+                dao.updatePhoto(photoReminderId, tempCameraUriString!!)
+            }
+        }
+        photoReminderId = -1L
+        tempCameraUriString = null
+    }
+
+    // Gallery photo picker launcher
+    val galleryLauncher = rememberLauncherForActivityResult(
+        contract = androidx.activity.result.contract.ActivityResultContracts.GetContent()
+    ) { uri ->
+        if (uri != null && photoReminderId > 0) {
+            // Take persistable permission so we can read it later
+            try {
+                context.contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            } catch (_: Exception) {}
+            scope.launch {
+                dao.updatePhoto(photoReminderId, uri.toString())
+            }
+        }
+        photoReminderId = -1L
+    }
 
     // Snooze dialog state
     var showSnoozeDialog by remember { mutableStateOf(false) }
@@ -307,32 +345,54 @@ fun HomeScreen(onAddReminder: () -> Unit, onOpenSettings: () -> Unit, onOpenHist
     // Photo options dialog
     if (showPhotoOptions && photoReminder != null) {
         AlertDialog(
-            onDismissRequest = { showPhotoOptions = false },
+            onDismissRequest = { showPhotoOptions = false; photoReminder = null },
             icon = { Icon(Icons.Default.CameraAlt, null) },
             title = { Text(stringResource(R.string.add_photo)) },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(stringResource(R.string.photo_description), style = MaterialTheme.typography.bodyMedium)
-                    Spacer(Modifier.height(8.dp))
-                    Text(
-                        stringResource(R.string.photo_info),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    // Camera button
+                    FilledTonalButton(
+                        onClick = {
+                            showPhotoOptions = false
+                            photoReminderId = photoReminder!!.id
+                            // Create the pictures directory if it doesn't exist
+                            val picturesDir = File(context.filesDir, "pictures")
+                            if (!picturesDir.exists()) picturesDir.mkdirs()
+                            val photoFile = File(picturesDir, "nomi_${System.currentTimeMillis()}.jpg")
+                            val uri = FileProvider.getUriForFile(
+                                context,
+                                "${context.packageName}.fileprovider",
+                                photoFile
+                            )
+                            tempCameraUriString = uri.toString()
+                            cameraLauncher.launch(uri)
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(Icons.Default.CameraAlt, null, Modifier.size(20.dp))
+                        Spacer(Modifier.width(12.dp))
+                        Text(stringResource(R.string.take_photo))
+                    }
+                    // Gallery button
+                    FilledTonalButton(
+                        onClick = {
+                            showPhotoOptions = false
+                            photoReminderId = photoReminder!!.id
+                            galleryLauncher.launch("image/*")
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(Icons.Default.PhotoLibrary, null, Modifier.size(20.dp))
+                        Spacer(Modifier.width(12.dp))
+                        Text(stringResource(R.string.from_gallery))
+                    }
                 }
             },
-            confirmButton = {
-                Button(onClick = {
-                    // In a real implementation, this would launch camera/gallery intent
-                    // For now, mark as photo attached with placeholder
-                    scope.launch {
-                        dao.updatePhoto(photoReminder!!.id, "photo_placeholder")
-                    }
-                    showPhotoOptions = false
-                }) { Text(stringResource(R.string.take_photo)) }
-            },
+            confirmButton = {},
             dismissButton = {
-                TextButton(onClick = { showPhotoOptions = false }) { Text(stringResource(R.string.cancel)) }
+                TextButton(onClick = { showPhotoOptions = false; photoReminder = null }) {
+                    Text(stringResource(R.string.cancel))
+                }
             }
         )
     }
@@ -729,29 +789,36 @@ fun ReminderCard(reminder: Reminder, onComplete: () -> Unit, onEdit: () -> Unit,
             }
 
             Spacer(Modifier.height(12.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                // Green "Wykonane" button with checkmark
+            // Responsive action buttons - use small icon buttons to fit all screens
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Green "Wykonane" button with checkmark - compact
                 Button(
                     onClick = onComplete,
+                    modifier = Modifier.weight(1f),
+                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFF4CAF50),
                         contentColor = Color.White
                     )
                 ) {
-                    Icon(Icons.Default.Check, null, Modifier.size(18.dp))
+                    Icon(Icons.Default.Check, null, Modifier.size(16.dp))
                     Spacer(Modifier.width(4.dp))
-                    Text(stringResource(R.string.completed_btn))
+                    Text(stringResource(R.string.completed_btn), maxLines = 1, style = MaterialTheme.typography.labelMedium)
                 }
-                // Edit button (pencil)
-                OutlinedButton(onClick = onEdit) {
-                    Icon(Icons.Default.Edit, null, Modifier.size(18.dp))
+                // Edit button (icon only)
+                IconButton(onClick = onEdit, modifier = Modifier.size(36.dp)) {
+                    Icon(Icons.Default.Edit, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
-                // Photo button
-                OutlinedButton(onClick = onAddPhoto) {
-                    Icon(Icons.Default.CameraAlt, null, Modifier.size(18.dp))
+                // Photo button (icon only)
+                IconButton(onClick = onAddPhoto, modifier = Modifier.size(36.dp)) {
+                    Icon(Icons.Default.CameraAlt, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
-                // Delete button
-                OutlinedButton(onClick = onDelete) {
+                // Delete button (icon only)
+                IconButton(onClick = onDelete, modifier = Modifier.size(36.dp)) {
                     Icon(Icons.Default.Delete, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.error)
                 }
             }

@@ -64,6 +64,7 @@
     <string name="notification_fires_at">Benachrichtigung kommt:</string>
     <string name="add_photo">Foto hinzufügen</string>
     <string name="take_photo">Foto aufnehmen</string>
+    <string name="from_gallery">Aus Galerie wählen</string>
     <string name="photo_attached">Foto angehängt</string>
     <string name="photo_description">Füge ein Foto zur Erinnerung hinzu, z.B. ein Produkt im Laden.</string>
     <string name="photo_info">Das Foto wird auf der Erinnerungskarte angezeigt.</string>
@@ -92,4 +93,6 @@
     <string name="later">Später</string>
     <string name="edit_reminder">Erinnerung bearbeiten</string>
     <string name="reminder_saved">Gespeichert!</string>
+    <string name="show_setup_guide">Einrichtung anzeigen</string>
+    <string name="show_setup_guide_desc">Konfigurationsbildschirme erneut anzeigen</string>
 </resources>

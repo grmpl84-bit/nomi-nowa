@@ -64,6 +64,7 @@
     <string name="notification_fires_at">La notificación aparecerá:</string>
     <string name="add_photo">Añadir foto</string>
     <string name="take_photo">Tomar foto</string>
+    <string name="from_gallery">Elegir de la galería</string>
     <string name="photo_attached">Foto adjunta</string>
     <string name="photo_description">Añade una foto a este recordatorio, ej. un producto en la tienda.</string>
     <string name="photo_info">La foto será visible en la tarjeta del recordatorio.</string>
@@ -92,4 +93,6 @@
     <string name="later">Más tarde</string>
     <string name="edit_reminder">Editar recordatorio</string>
     <string name="reminder_saved">¡Guardado!</string>
+    <string name="show_setup_guide">Mostrar guía</string>
+    <string name="show_setup_guide_desc">Mostrar de nuevo las pantallas de configuración</string>
 </resources>

@@ -30,8 +30,13 @@ class FocusRemindApp : Application() {
      * Auto-detect system language on first launch.
      * If the system language matches one of our supported languages,
      * set the app to use that language automatically.
+     * On Android 13+, the system handles per-app language via localeConfig,
+     * so we only do this on older Android versions.
      */
     private fun autoDetectLanguage() {
+        // On Android 13+, the system handles locales via localeConfig - don't interfere
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) return
+
         val prefs = getSharedPreferences("nomi_prefs", MODE_PRIVATE)
         if (prefs.getBoolean("language_auto_detected", false)) return
 

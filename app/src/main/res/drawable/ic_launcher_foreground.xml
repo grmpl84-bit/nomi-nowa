@@ -5,61 +5,49 @@
     android:viewportWidth="108"
     android:viewportHeight="108">
 
-    <!-- Speech bubble with gradient (purple left, cyan right) -->
-    <!-- Main bubble - purple base -->
-    <path
-        android:fillColor="#B44AFF"
-        android:pathData="M28,20h52c7.7,0 14,6.3 14,14v38c0,7.7 -6.3,14 -14,14h-6l-10,12l-10,-12h-26c-7.7,0 -14,-6.3 -14,-14v-38c0,-7.7 6.3,-14 14,-14z" />
-
-    <!-- Gradient overlay - cyan on right -->
-    <path
-        android:fillColor="#00D4FF"
-        android:fillAlpha="0.8"
-        android:pathData="M58,20h22c7.7,0 14,6.3 14,14v38c0,7.7 -6.3,14 -14,14h-6l-10,12l-6,-7v-71z" />
-
-    <!-- Middle blend -->
-    <path
-        android:fillColor="#6C63FF"
-        android:fillAlpha="0.5"
-        android:pathData="M48,20h18v68l-4,-4h-14v-64z" />
-
-    <!-- Letter "n" - two vertical lines connected by arch at top -->
-    <!-- Left leg of n -->
+    <!-- Speech bubble shape with rounded corners and tail -->
+    <!-- Main bubble body -->
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M38,70v-24"
-        android:strokeColor="#FFFFFF"
-        android:strokeWidth="7"
-        android:strokeLineCap="round" />
+        android:fillAlpha="0.15"
+        android:pathData="M26,24h56c8.8,0 16,7.2 16,16v32c0,8.8 -7.2,16 -16,16h-10l-8,10l-8,-10h-30c-8.8,0 -16,-7.2 -16,-16v-32c0,-8.8 7.2,-16 16,-16z" />
 
-    <!-- Arch from left to right (top of n) -->
+    <!-- Letter "n" - arch shape (like in the icon: a U-shape upside down / arch) -->
+    <!-- White border/glow around the arch -->
     <path
         android:fillColor="@android:color/transparent"
         android:strokeColor="#FFFFFF"
-        android:strokeWidth="7"
+        android:strokeWidth="9"
         android:strokeLineCap="round"
-        android:pathData="M38,46c0,-10 8,-16 16,-16s16,6 16,16" />
+        android:pathData="M36,72v-18c0,-14 10,-22 18,-22s18,8 18,22v18" />
 
-    <!-- Right leg of n (shorter) -->
+    <!-- Inner cutout to make it look like thick outlined "n" arch -->
     <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M54,46v24"
+        android:fillColor="@android:color/transparent"
         android:strokeColor="#FFFFFF"
-        android:strokeWidth="7"
-        android:strokeLineCap="round" />
+        android:strokeWidth="3"
+        android:strokeLineCap="round"
+        android:pathData="M36,72v-18c0,-14 10,-22 18,-22s18,8 18,22v18" />
 
-    <!-- Sound dot -->
+    <!-- Sound wave bars (right side of n) -->
+    <!-- Bar 1 (short) -->
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M66,52m-3.5,0a3.5,3.5 0,1 1,7 0a3.5,3.5 0,1 1,-7 0" />
+        android:pathData="M78,48h4v20h-4z" />
 
-    <!-- Sound bars -->
+    <!-- Bar 2 (medium) -->
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M73,44h5v20h-5z" />
+        android:pathData="M85,44h4v28h-4z" />
 
+    <!-- Bar 3 (tall) -->
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M81,48h4v12h-4z" />
+        android:pathData="M92,40h4v36h-4z" />
+
+    <!-- Bar 4 (medium) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M99,46h3v24h-3z" />
 
 </vector>
