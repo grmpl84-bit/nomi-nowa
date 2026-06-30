@@ -40,6 +40,10 @@ class FocusRemindApp : Application() {
         val prefs = getSharedPreferences("nomi_prefs", MODE_PRIVATE)
         if (prefs.getBoolean("language_auto_detected", false)) return
 
+        // Only auto-detect AFTER onboarding is done — otherwise we'd skip the language
+        // selection screen (getApplicationLocales() would be non-empty on first launch)
+        if (!prefs.getBoolean("onboarding_done", false)) return
+
         // Only auto-detect if user hasn't manually set a language
         val appLocales = AppCompatDelegate.getApplicationLocales()
         if (!appLocales.isEmpty) return

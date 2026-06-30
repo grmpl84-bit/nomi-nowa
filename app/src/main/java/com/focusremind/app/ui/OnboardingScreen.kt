@@ -37,9 +37,15 @@ private const val TOTAL_PAGES = 5
 fun OnboardingScreen(onFinished: () -> Unit) {
     val context = LocalContext.current
     val prefs = remember { context.getSharedPreferences("nomi_prefs", Context.MODE_PRIVATE) }
-    // If language was already chosen (Activity restarted after locale change), skip to page 1
-    val languageAlreadyChosen = remember { prefs.getBoolean("onboarding_language_chosen", false) }
+
+    // Check if user already chose a language by reading the locale state directly.
+    // This is reliable across ALL devices including MIUI — no SharedPreferences race condition.
+    // After setApplicationLocales() + Activity restart, getApplicationLocales() is always non-empty.
+    val languageAlreadyChosen = remember {
+        !AppCompatDelegate.getApplicationLocales().isEmpty
+    }
     val startPage = if (languageAlreadyChosen) 1 else 0
+
     val pagerState = rememberPagerState(initialPage = startPage, pageCount = { TOTAL_PAGES })
     val scope = rememberCoroutineScope()
 
@@ -53,20 +59,18 @@ fun OnboardingScreen(onFinished: () -> Unit) {
                 modifier = Modifier.weight(1f)
             ) { page ->
                 when (page) {
-                    // === PAGE 0: LANGUAGE SELECTION (no translations needed - flags speak for themselves) ===
+                    // === PAGE 0: LANGUAGE SELECTION ===
                     0 -> LanguageSelectionPage(
                         onLanguageSelected = { langCode ->
-                            // Use commit() NOT apply() — apply() is async and may not finish
-                            // before Activity restarts from setApplicationLocales()!
-                            prefs.edit().putBoolean("onboarding_language_chosen", true).commit()
                             if (langCode.isNotEmpty()) {
                                 AppCompatDelegate.setApplicationLocales(
                                     LocaleListCompat.forLanguageTags(langCode)
                                 )
+                                // setApplicationLocales() restarts the Activity when locale changes.
+                                // After restart, getApplicationLocales() is non-empty → startPage = 1.
                             }
-                            // setApplicationLocales() WILL restart the Activity when locale changes.
-                            // After restart, pager initialPage = 1 (language already chosen flag).
-                            // But if user picks SAME language (no restart), we navigate manually:
+                            // Also animate manually — handles case where user picks same language
+                            // (no restart happens), or for any reason restart doesn't fire.
                             scope.launch { pagerState.animateScrollToPage(1) }
                         }
                     )
@@ -132,10 +136,7 @@ fun OnboardingScreen(onFinished: () -> Unit) {
                         buttonText = stringResource(R.string.onboarding_done_button),
                         showSettingsIcon = false,
                         onButtonClick = {
-                            prefs.edit()
-                                .putBoolean("onboarding_done", true)
-                                .putBoolean("onboarding_language_chosen", false)
-                                .apply()
+                            prefs.edit().putBoolean("onboarding_done", true).apply()
                             onFinished()
                         }
                     )
