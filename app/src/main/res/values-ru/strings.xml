@@ -93,4 +93,6 @@
     <string name="later">Позже</string>
     <string name="edit_reminder">Редактировать напоминание</string>
     <string name="reminder_saved">Сохранено!</string>
+    <string name="show_setup_guide">Показать руководство</string>
+    <string name="show_setup_guide_desc">Показать экраны настройки снова</string>
 </resources>

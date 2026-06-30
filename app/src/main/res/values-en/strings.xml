@@ -93,4 +93,6 @@
     <string name="later">Later</string>
     <string name="edit_reminder">Edit reminder</string>
     <string name="reminder_saved">Saved!</string>
+    <string name="show_setup_guide">Show setup guide</string>
+    <string name="show_setup_guide_desc">Show the configuration screens again</string>
 </resources>

@@ -93,4 +93,6 @@
     <string name="later">Plus tard</string>
     <string name="edit_reminder">Modifier le rappel</string>
     <string name="reminder_saved">Enregistré !</string>
+    <string name="show_setup_guide">Afficher le guide</string>
+    <string name="show_setup_guide_desc">Afficher à nouveau les écrans de configuration</string>
 </resources>

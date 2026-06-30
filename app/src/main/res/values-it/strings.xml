@@ -93,4 +93,6 @@
     <string name="later">Più tardi</string>
     <string name="edit_reminder">Modifica promemoria</string>
     <string name="reminder_saved">Salvato!</string>
+    <string name="show_setup_guide">Mostra la guida</string>
+    <string name="show_setup_guide_desc">Mostra di nuovo le schermate di configurazione</string>
 </resources>

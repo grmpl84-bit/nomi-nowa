@@ -93,4 +93,6 @@
     <string name="later">Później</string>
     <string name="edit_reminder">Edytuj przypomnienie</string>
     <string name="reminder_saved">Zapisano!</string>
+    <string name="show_setup_guide">Pokaż przewodnik</string>
+    <string name="show_setup_guide_desc">Wyświetl ponownie plansze konfiguracyjne</string>
 </resources>

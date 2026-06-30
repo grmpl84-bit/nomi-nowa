@@ -27,7 +27,7 @@ import com.focusremind.app.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(onBack: () -> Unit, onOpenSoundPicker: () -> Unit) {
+fun SettingsScreen(onBack: () -> Unit, onOpenSoundPicker: () -> Unit, onShowOnboarding: () -> Unit) {
     val context = LocalContext.current
     val prefs = remember { context.getSharedPreferences("focusremind_settings", Context.MODE_PRIVATE) }
 
@@ -220,6 +220,25 @@ fun SettingsScreen(onBack: () -> Unit, onOpenSoundPicker: () -> Unit) {
                             getLanguageDisplayName(currentLanguage),
                             style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
+                    }
+                    Icon(Icons.Default.ChevronRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+
+            HorizontalDivider()
+
+            // === SETUP GUIDE (re-show onboarding) ===
+            Card(onClick = {
+                context.getSharedPreferences("nomi_prefs", Context.MODE_PRIVATE)
+                    .edit().putBoolean("onboarding_done", false).apply()
+                onShowOnboarding()
+            }, modifier = Modifier.fillMaxWidth()) {
+                Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.HelpOutline, null, tint = MaterialTheme.colorScheme.primary)
+                    Spacer(Modifier.width(16.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(stringResource(R.string.show_setup_guide), style = MaterialTheme.typography.titleSmall)
+                        Text(stringResource(R.string.show_setup_guide_desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     Icon(Icons.Default.ChevronRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                 }

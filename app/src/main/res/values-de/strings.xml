@@ -93,4 +93,6 @@
     <string name="later">Später</string>
     <string name="edit_reminder">Erinnerung bearbeiten</string>
     <string name="reminder_saved">Gespeichert!</string>
+    <string name="show_setup_guide">Einrichtung anzeigen</string>
+    <string name="show_setup_guide_desc">Konfigurationsbildschirme erneut anzeigen</string>
 </resources>
