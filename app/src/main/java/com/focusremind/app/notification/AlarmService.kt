@@ -10,9 +10,11 @@ import android.net.Uri
 import android.os.*
 import android.provider.Settings
 import android.util.Log
+import android.widget.RemoteViews
 import androidx.core.app.NotificationCompat
 import com.focusremind.app.FocusRemindApp
 import com.focusremind.app.MainActivity
+import com.focusremind.app.R
 
 /**
  * Foreground service that plays alarm sound in a LOOP and vibrates
@@ -88,11 +90,27 @@ class AlarmService : Service() {
         // Grammar: natural Polish
         val notificationText = buildNotificationText(title)
 
+        // Custom collapsed view — buttons always visible, amber background
+        val collapsedView = RemoteViews(packageName, R.layout.notification_collapsed).apply {
+            setTextViewText(R.id.notif_title, notificationText)
+            setOnClickPendingIntent(R.id.btn_done, doneIntent)
+            setOnClickPendingIntent(R.id.btn_snooze5, snooze5Intent)
+            setOnClickPendingIntent(R.id.btn_snooze15, snooze15Intent)
+        }
+
+        // Custom expanded view — same buttons + extra space
+        val expandedView = RemoteViews(packageName, R.layout.notification_expanded).apply {
+            setTextViewText(R.id.notif_title, notificationText)
+            setTextViewText(R.id.notif_text, "Dotknij aby otworzyć • Przesuń w bok aby odrzucić")
+            setOnClickPendingIntent(R.id.btn_done, doneIntent)
+            setOnClickPendingIntent(R.id.btn_snooze5, snooze5Intent)
+            setOnClickPendingIntent(R.id.btn_snooze15, snooze15Intent)
+        }
+
         val notification = NotificationCompat.Builder(this, FocusRemindApp.NOTIFICATION_CHANNEL_ID)
             .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
-            .setContentTitle("⏰ Nomi")
-            .setContentText(notificationText)
-            .setStyle(NotificationCompat.BigTextStyle().bigText(notificationText))
+            .setContentTitle(notificationText)
+            .setContentText("Dotknij aby otworzyć")
             .setPriority(NotificationCompat.PRIORITY_MAX)
             .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
@@ -100,6 +118,9 @@ class AlarmService : Service() {
             .setAutoCancel(false)
             .setFullScreenIntent(fullIntent, true)
             .setContentIntent(fullIntent)
+            .setCustomContentView(collapsedView)
+            .setCustomBigContentView(expandedView)
+            .setStyle(NotificationCompat.DecoratedCustomViewStyle())
             .addAction(android.R.drawable.checkbox_on_background, "✅ Gotowe", doneIntent)
             .addAction(android.R.drawable.ic_menu_recent_history, "+5 min", snooze5Intent)
             .addAction(android.R.drawable.ic_menu_recent_history, "+15 min", snooze15Intent)

@@ -12,12 +12,14 @@ import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
 import android.util.Log
+import android.widget.RemoteViews
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.focusremind.app.FocusRemindApp
 import com.focusremind.app.MainActivity
+import com.focusremind.app.R
 
 /**
  * WorkManager backup for notifications.
@@ -112,11 +114,25 @@ class ReminderWorker(
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
+        // Custom collapsed view — buttons always visible, amber background
+        val collapsedView = RemoteViews(context.packageName, R.layout.notification_collapsed).apply {
+            setTextViewText(R.id.notif_title, notificationText)
+            setOnClickPendingIntent(R.id.btn_done, doneIntent)
+            setOnClickPendingIntent(R.id.btn_snooze5, snooze5Intent)
+        }
+
+        // Custom expanded view
+        val expandedView = RemoteViews(context.packageName, R.layout.notification_expanded).apply {
+            setTextViewText(R.id.notif_title, notificationText)
+            setTextViewText(R.id.notif_text, "Dotknij aby otworzyć • Przesuń w bok aby odrzucić")
+            setOnClickPendingIntent(R.id.btn_done, doneIntent)
+            setOnClickPendingIntent(R.id.btn_snooze5, snooze5Intent)
+        }
+
         val notification = NotificationCompat.Builder(context, FocusRemindApp.NOTIFICATION_CHANNEL_ID)
             .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
-            .setContentTitle("⏰ Nomi (backup)")
-            .setContentText(notificationText)
-            .setStyle(NotificationCompat.BigTextStyle().bigText(notificationText))
+            .setContentTitle(notificationText)
+            .setContentText("Dotknij aby otworzyć")
             .setPriority(NotificationCompat.PRIORITY_MAX)
             .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
@@ -124,6 +140,9 @@ class ReminderWorker(
             .setOngoing(true)
             .setContentIntent(tapIntent)
             .setFullScreenIntent(tapIntent, true)
+            .setCustomContentView(collapsedView)
+            .setCustomBigContentView(expandedView)
+            .setStyle(NotificationCompat.DecoratedCustomViewStyle())
             .addAction(android.R.drawable.checkbox_on_background, "✅ Gotowe", doneIntent)
             .addAction(android.R.drawable.ic_menu_recent_history, "+5 min", snooze5Intent)
             .build()
