@@ -57,7 +57,11 @@ fun OnboardingScreen(onFinished: () -> Unit) {
                     0 -> LanguageSelectionPage(
                         onLanguageSelected = { langCode ->
                             // Save flag BEFORE locale change (Activity will restart!)
-                            prefs.edit().putBoolean("onboarding_language_chosen", true).apply()
+                            // MUST use commit() (synchronous), not apply() (async) —
+                            // setApplicationLocales() below can kill/restart the process
+                            // almost immediately, and an in-flight apply() write can be
+                            // lost, causing the app to land back on page 0 after restart.
+                            prefs.edit().putBoolean("onboarding_language_chosen", true).commit()
                             // Apply language immediately so next pages are translated
                             if (langCode.isNotEmpty()) {
                                 AppCompatDelegate.setApplicationLocales(
