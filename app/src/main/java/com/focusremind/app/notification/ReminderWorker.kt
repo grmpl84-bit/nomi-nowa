@@ -2,24 +2,16 @@ package com.focusremind.app.notification
 
 import android.Manifest
 import android.app.NotificationManager
-import android.app.PendingIntent
 import android.content.Context
-import android.content.Intent
 import android.content.pm.PackageManager
-import android.media.RingtoneManager
 import android.os.Build
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
 import android.util.Log
-import android.widget.RemoteViews
-import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
-import com.focusremind.app.FocusRemindApp
-import com.focusremind.app.MainActivity
-import com.focusremind.app.R
 
 /**
  * WorkManager backup for notifications.
@@ -75,78 +67,10 @@ class ReminderWorker(
         val prefs = context.getSharedPreferences("focusremind_settings", Context.MODE_PRIVATE)
         val vibrationEnabled = prefs.getBoolean("vibration_enabled", true)
 
-        // Grammar
-        var cleanTitle = title
-        cleanTitle = cleanTitle.replace(Regex("^przypomnij\\s*(mi\\s*)?", RegexOption.IGNORE_CASE), "")
-        cleanTitle = cleanTitle.replace(Regex("^przypomnienie\\s*", RegexOption.IGNORE_CASE), "")
-        cleanTitle = cleanTitle.trim()
-        val notificationText = if (cleanTitle.startsWith("o ") || cleanTitle.startsWith("O ")) {
-            "Przypominam $cleanTitle"
-        } else {
-            "Przypominam: $cleanTitle"
-        }
-
         val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
-        val tapIntent = PendingIntent.getActivity(
-            context, reminderId.toInt(),
-            Intent(context, MainActivity::class.java).apply {
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-            },
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-
-        val doneIntent = PendingIntent.getBroadcast(
-            context, (reminderId * 10).toInt(),
-            Intent(context, NotificationActionReceiver::class.java).apply {
-                action = "DONE"
-                putExtra("reminder_id", reminderId)
-            },
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-
-        val snooze5Intent = PendingIntent.getBroadcast(
-            context, (reminderId * 10 + 1).toInt(),
-            Intent(context, NotificationActionReceiver::class.java).apply {
-                action = "SNOOZE_5"
-                putExtra("reminder_id", reminderId)
-            },
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-
-        // Custom collapsed view — buttons always visible, amber background
-        val collapsedView = RemoteViews(context.packageName, R.layout.notification_collapsed).apply {
-            setTextViewText(R.id.notif_title, notificationText)
-            setOnClickPendingIntent(R.id.btn_done, doneIntent)
-            setOnClickPendingIntent(R.id.btn_snooze5, snooze5Intent)
-        }
-
-        // Custom expanded view
-        val expandedView = RemoteViews(context.packageName, R.layout.notification_expanded).apply {
-            setTextViewText(R.id.notif_title, notificationText)
-            setTextViewText(R.id.notif_text, "Dotknij aby otworzyć • Przesuń w bok aby odrzucić")
-            setOnClickPendingIntent(R.id.btn_done, doneIntent)
-            setOnClickPendingIntent(R.id.btn_snooze5, snooze5Intent)
-        }
-
-        val notification = NotificationCompat.Builder(context, FocusRemindApp.NOTIFICATION_CHANNEL_ID)
-            .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
-            .setContentTitle(notificationText)
-            .setContentText("Dotknij aby otworzyć")
-            .setPriority(NotificationCompat.PRIORITY_MAX)
-            .setCategory(NotificationCompat.CATEGORY_ALARM)
-            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-            .setAutoCancel(false)
-            .setOngoing(true)
-            .setContentIntent(tapIntent)
-            .setFullScreenIntent(tapIntent, true)
-            .setCustomContentView(collapsedView)
-            .setCustomBigContentView(expandedView)
-            .setStyle(NotificationCompat.DecoratedCustomViewStyle())
-            .addAction(android.R.drawable.checkbox_on_background, "✅ Gotowe", doneIntent)
-            .addAction(android.R.drawable.ic_menu_recent_history, "+5 min", snooze5Intent)
-            .build()
-
+        // Same amber, always-visible-buttons notification as AlarmReceiver
+        val notification = ReminderNotificationBuilder.build(context, reminderId, title)
         nm.notify(reminderId.toInt(), notification)
         Log.d(TAG, "Backup notification shown for reminder $reminderId")
 

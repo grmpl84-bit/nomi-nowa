@@ -27,7 +27,6 @@ class NotificationActionReceiver : BroadcastReceiver() {
 
         // Stop alarm sound and vibration IMMEDIATELY
         SoundPlayer.stop()
-        AlarmService.stop(context)
 
         // Dismiss notification
         val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager

@@ -10,8 +10,8 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import com.focusremind.app.data.Reminder
-import com.focusremind.app.notification.AlarmService
 import com.focusremind.app.notification.ReminderAlarmScheduler
+import com.focusremind.app.notification.SoundPlayer
 import com.focusremind.app.speech.TimeParser
 import com.focusremind.app.ui.AppNavigation
 import com.focusremind.app.ui.theme.FocusRemindTheme
@@ -30,9 +30,14 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        // Only stop the alarm sound service when user opens from notification tap
+        // Only stop the alarm sound/vibration when user opens from notification tap
         if (savedInstanceState == null && intent?.hasExtra("reminder_id") == true) {
-            AlarmService.stop(this)
+            SoundPlayer.stop()
+            val reminderId = intent?.getLongExtra("reminder_id", -1) ?: -1
+            if (reminderId != -1L) {
+                (getSystemService(NOTIFICATION_SERVICE) as android.app.NotificationManager)
+                    .cancel(reminderId.toInt())
+            }
         }
 
         // Handle Google Assistant "Create Note" intent

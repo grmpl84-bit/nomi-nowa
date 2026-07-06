@@ -2,7 +2,6 @@ package com.focusremind.app.notification
 
 import android.Manifest
 import android.app.NotificationManager
-import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -16,10 +15,7 @@ import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
 import android.util.Log
-import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
-import com.focusremind.app.FocusRemindApp
-import com.focusremind.app.MainActivity
 
 /**
  * Fired by AlarmManager at the exact scheduled time.
@@ -62,70 +58,11 @@ class AlarmReceiver : BroadcastReceiver() {
         // Get sound URI
         val soundUri = getSoundByIndex(context, soundIndex)
 
-        // Grammar: natural Polish
-        val notificationText = buildNotificationText(title)
-
         val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
-        // Tap intent - opens the app
-        val tapIntent = PendingIntent.getActivity(
-            context, reminderId.toInt(),
-            Intent(context, MainActivity::class.java).apply {
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-            },
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-
-        // Action: Done
-        val doneIntent = PendingIntent.getBroadcast(
-            context, (reminderId * 10).toInt(),
-            Intent(context, NotificationActionReceiver::class.java).apply {
-                action = "DONE"
-                putExtra("reminder_id", reminderId)
-            },
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-
-        // Action: Snooze +5 min
-        val snooze5Intent = PendingIntent.getBroadcast(
-            context, (reminderId * 10 + 1).toInt(),
-            Intent(context, NotificationActionReceiver::class.java).apply {
-                action = "SNOOZE_5"
-                putExtra("reminder_id", reminderId)
-            },
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-
-        // Action: Snooze +15 min
-        val snooze15Intent = PendingIntent.getBroadcast(
-            context, (reminderId * 10 + 2).toInt(),
-            Intent(context, NotificationActionReceiver::class.java).apply {
-                action = "SNOOZE_15"
-                putExtra("reminder_id", reminderId)
-            },
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-
-        // Build notification (NO sound on notification - we play it ourselves via MediaPlayer)
-        val builder = NotificationCompat.Builder(context, FocusRemindApp.NOTIFICATION_CHANNEL_ID)
-            .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
-            .setContentTitle("⏰ Nomi")
-            .setContentText(notificationText)
-            .setStyle(NotificationCompat.BigTextStyle().bigText(notificationText))
-            .setPriority(NotificationCompat.PRIORITY_MAX)
-            .setCategory(NotificationCompat.CATEGORY_ALARM)
-            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-            .setAutoCancel(false)
-            .setOngoing(true)
-            .setContentIntent(tapIntent)
-            .setFullScreenIntent(tapIntent, true)
-            .addAction(android.R.drawable.checkbox_on_background, "✅ Gotowe", doneIntent)
-            .addAction(android.R.drawable.ic_menu_recent_history, "+5 min", snooze5Intent)
-            .addAction(android.R.drawable.ic_menu_recent_history, "+15 min", snooze15Intent)
-            // Need setVibrate to trigger heads-up display (channel has no sound)
-            .setVibrate(longArrayOf(0))
-
-        nm.notify(reminderId.toInt(), builder.build())
+        // Build notification (amber, always-visible buttons — same style everywhere)
+        val notification = ReminderNotificationBuilder.build(context, reminderId, title)
+        nm.notify(reminderId.toInt(), notification)
         Log.d(TAG, "Notification shown for reminder $reminderId")
 
         // === PLAY SOUND via MediaPlayer (user's chosen sound) - LOOPING until dismissed ===
@@ -184,18 +121,6 @@ class AlarmReceiver : BroadcastReceiver() {
             } catch (e: Exception) {
                 Log.w(TAG, "Vibration failed", e)
             }
-        }
-    }
-
-    private fun buildNotificationText(title: String): String {
-        var cleanTitle = title
-        cleanTitle = cleanTitle.replace(Regex("^przypomnij\\s*(mi\\s*)?", RegexOption.IGNORE_CASE), "")
-        cleanTitle = cleanTitle.replace(Regex("^przypomnienie\\s*", RegexOption.IGNORE_CASE), "")
-        cleanTitle = cleanTitle.trim()
-        return if (cleanTitle.startsWith("o ") || cleanTitle.startsWith("O ")) {
-            "Przypominam $cleanTitle"
-        } else {
-            "Przypominam: $cleanTitle"
         }
     }
 
