@@ -59,21 +59,18 @@ object ReminderNotificationBuilder {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        // Custom collapsed view — buttons always visible, amber background
+        // Custom collapsed view — title only, no buttons (native action buttons
+        // below handle Done/+5/+15 — see .addAction() calls). Keeping this view
+        // short means it fits within Android's collapsed-notification height
+        // limit, so the title is visible without expanding.
         val collapsedView = RemoteViews(context.packageName, R.layout.notification_collapsed).apply {
             setTextViewText(R.id.notif_title, notificationText)
-            setOnClickPendingIntent(R.id.btn_done, doneIntent)
-            setOnClickPendingIntent(R.id.btn_snooze5, snooze5Intent)
-            setOnClickPendingIntent(R.id.btn_snooze15, snooze15Intent)
         }
 
-        // Custom expanded view — same buttons + extra space
+        // Custom expanded view — same idea, just title + short instruction line
         val expandedView = RemoteViews(context.packageName, R.layout.notification_expanded).apply {
             setTextViewText(R.id.notif_title, notificationText)
             setTextViewText(R.id.notif_text, "Dotknij aby otworzyć • Przesuń w bok aby odrzucić")
-            setOnClickPendingIntent(R.id.btn_done, doneIntent)
-            setOnClickPendingIntent(R.id.btn_snooze5, snooze5Intent)
-            setOnClickPendingIntent(R.id.btn_snooze15, snooze15Intent)
         }
 
         return NotificationCompat.Builder(context, FocusRemindApp.NOTIFICATION_CHANNEL_ID)
@@ -90,7 +87,7 @@ object ReminderNotificationBuilder {
             .setCustomContentView(collapsedView)
             .setCustomBigContentView(expandedView)
             .setStyle(NotificationCompat.DecoratedCustomViewStyle())
-            .addAction(android.R.drawable.checkbox_on_background, "✅ Gotowe", doneIntent)
+            .addAction(android.R.drawable.checkbox_on_background, "✅ Zrobione", doneIntent)
             .addAction(android.R.drawable.ic_menu_recent_history, "+5 min", snooze5Intent)
             .addAction(android.R.drawable.ic_menu_recent_history, "+15 min", snooze15Intent)
             .build()
