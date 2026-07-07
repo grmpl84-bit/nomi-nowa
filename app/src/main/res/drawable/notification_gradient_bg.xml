@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Same purple → cyan gradient as the app icon and splash screen,
+     used as the alarm notification background instead of flat amber. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <gradient
+        android:type="linear"
+        android:angle="315"
+        android:startColor="#9C27B0"
+        android:centerColor="#7C4DFF"
+        android:endColor="#00BCD4" />
+</shape>

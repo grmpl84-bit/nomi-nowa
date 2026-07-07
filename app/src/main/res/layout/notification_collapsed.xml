@@ -4,7 +4,7 @@
     android:layout_height="wrap_content"
     android:orientation="vertical"
     android:padding="12dp"
-    android:background="#FF6F00">
+    android:background="@drawable/notification_gradient_bg">
 
     <!-- Header row: icon + app name -->
     <LinearLayout
@@ -26,7 +26,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="Nomi"
-            android:textColor="#FFEECC"
+            android:textColor="#F0E6FF"
             android:textSize="11sp"
             android:letterSpacing="0.05" />
 
