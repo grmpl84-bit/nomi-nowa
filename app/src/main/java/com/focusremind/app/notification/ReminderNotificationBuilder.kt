@@ -67,10 +67,9 @@ object ReminderNotificationBuilder {
             setTextViewText(R.id.notif_title, notificationText)
         }
 
-        // Custom expanded view — same idea, just title + short instruction line
+        // Custom expanded view — title only (no extra instruction text)
         val expandedView = RemoteViews(context.packageName, R.layout.notification_expanded).apply {
             setTextViewText(R.id.notif_title, notificationText)
-            setTextViewText(R.id.notif_text, "Dotknij aby otworzyć • Przesuń w bok aby odrzucić")
         }
 
         return NotificationCompat.Builder(context, FocusRemindApp.NOTIFICATION_CHANNEL_ID)
