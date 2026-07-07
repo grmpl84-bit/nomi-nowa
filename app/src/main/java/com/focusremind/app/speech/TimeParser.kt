@@ -411,18 +411,18 @@ object TimeParser {
             if (day != null && day in 1..31) {
                 var hour = 9; var minute = 0
                 val afterMonth = text.substringAfter(monthWord)
-                Regex("""o\s+(.+)""").find(afterMonth)?.let { m ->
+                Regex("""o\s+((?:\S+\s+){0,1}\S+)""").find(afterMonth)?.let { m ->
                     extractTime(m.groupValues[1])?.let { (h, min) -> hour = h; minute = min }
                 }
                 val cal = calendarForDate(month, day, hour, minute)
                 val cleaned = text.replace(Regex("""\d+\s*$monthWord"""), "")
-                    .replace(Regex("""o\s+.+"""), "").replace(monthWord, "").trim()
+                    .replace(Regex("""o\s+(?:\S+\s+){0,1}\S+"""), "").replace(monthWord, "").trim()
                 return Result(cal.timeInMillis, cleaned)
             }
         }
 
         // Day of week PL: "w poniedziałek o 15:30"
-        parseDayOfWeek(text, plDaysOfWeek, Regex("""o\s+(.+)"""))?.let { return it }
+        parseDayOfWeek(text, plDaysOfWeek, Regex("""o\s+((?:\S+\s+){0,1}\S+)"""))?.let { return it }
 
         // "za X minut/minutę/minuty"
         Regex("""za\s+(.+?)\s*min(?:ut[ęy]?[ęe]?)?""").find(text)?.let {
@@ -458,7 +458,7 @@ object TimeParser {
         }
 
         // "jutro o 17:30"
-        Regex("""jutro\s+o\s+(.+)""").find(text)?.let {
+        Regex("""jutro\s+o\s+((?:\S+\s+){0,1}\S+)""").find(text)?.let {
             extractTime(it.groupValues[1])?.let { (h, m) ->
                 val cal = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, 1); set(Calendar.HOUR_OF_DAY, h); set(Calendar.MINUTE, m); set(Calendar.SECOND, 0) }
                 return Result(cal.timeInMillis, text.replace(it.value, "").trim())
@@ -522,7 +522,7 @@ object TimeParser {
         }
 
         // Day of week EN: "monday at 15:30" / "next friday at 9am"
-        parseDayOfWeek(text, enDaysOfWeek, Regex("""(?:at\s+)(.+)"""))?.let { return it }
+        parseDayOfWeek(text, enDaysOfWeek, Regex("""(?:at\s+)((?:\S+\s+){0,1}\S+)"""))?.let { return it }
 
         // "tonight at 9:30" / "this evening at 9"
         if (text.contains("tonight") || text.contains("this evening")) {
@@ -530,7 +530,7 @@ object TimeParser {
             Regex("""(?:at\s+)?(\d[\d:.h]*)""").find(text.substringAfter(trigger))?.let {
                 extractTime(it.groupValues[1])?.let { (h, m) ->
                     val cal = Calendar.getInstance().apply { set(Calendar.HOUR_OF_DAY, h); set(Calendar.MINUTE, m); set(Calendar.SECOND, 0) }
-                    return Result(cal.timeInMillis, text.replace(trigger, "").replace(Regex("at\\s+\\S+"), "").trim())
+                    return Result(cal.timeInMillis, text.replace(trigger, "").replace(Regex("at\\s+(?:\\S+\\s+){0,1}\\S+"), "").trim())
                 }
             }
             val cal = Calendar.getInstance().apply { set(Calendar.HOUR_OF_DAY, 21); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0) }
@@ -538,7 +538,7 @@ object TimeParser {
         }
 
         // "tomorrow at 9:30"
-        Regex("""tomorrow\s+(?:at\s+)?(.+)""").find(text)?.let {
+        Regex("""tomorrow\s+(?:at\s+)?((?:\S+\s+){0,1}\S+)""").find(text)?.let {
             extractTime(it.groupValues[1])?.let { (h, m) ->
                 val cal = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, 1); set(Calendar.HOUR_OF_DAY, h); set(Calendar.MINUTE, m); set(Calendar.SECOND, 0) }
                 return Result(cal.timeInMillis, text.replace(it.value, "").trim())
@@ -554,7 +554,7 @@ object TimeParser {
         }
 
         // "at 17:30" / "at 5pm"
-        Regex("""at\s+(.+)""").find(text)?.let {
+        Regex("""at\s+((?:\S+\s+){0,1}\S+)""").find(text)?.let {
             extractTime(it.groupValues[1])?.let { (h, m) ->
                 val cal = Calendar.getInstance().apply { set(Calendar.HOUR_OF_DAY, h); set(Calendar.MINUTE, m); set(Calendar.SECOND, 0); if (timeInMillis <= System.currentTimeMillis()) add(Calendar.DAY_OF_YEAR, 1) }
                 return Result(cal.timeInMillis, text.replace(it.value, "").trim())
@@ -586,21 +586,21 @@ object TimeParser {
         }
 
         // Day of week DE: "am montag um 9:30"
-        parseDayOfWeek(text, deDaysOfWeek, Regex("""um\s+(.+)"""))?.let { return it }
+        parseDayOfWeek(text, deDaysOfWeek, Regex("""um\s+((?:\S+\s+){0,1}\S+)"""))?.let { return it }
 
         // "heute abend um 20:30"
         if (text.contains("heute abend") || text.contains("heute nacht")) {
             val trigger = if (text.contains("heute abend")) "heute abend" else "heute nacht"
-            Regex("""um\s+(.+)""").find(text.substringAfter(trigger))?.let {
+            Regex("""um\s+((?:\S+\s+){0,1}\S+)""").find(text.substringAfter(trigger))?.let {
                 extractTime(it.groupValues[1])?.let { (h, m) ->
                     val cal = Calendar.getInstance().apply { set(Calendar.HOUR_OF_DAY, h); set(Calendar.MINUTE, m); set(Calendar.SECOND, 0) }
-                    return Result(cal.timeInMillis, text.replace(trigger, "").replace(Regex("um\\s+\\S+"), "").trim())
+                    return Result(cal.timeInMillis, text.replace(trigger, "").replace(Regex("um\\s+(?:\\S+\\s+){0,1}\\S+"), "").trim())
                 }
             }
         }
 
         // "morgen um 9:30"
-        Regex("""morgen\s+(?:um\s+)?(.+)""").find(text)?.let {
+        Regex("""morgen\s+(?:um\s+)?((?:\S+\s+){0,1}\S+)""").find(text)?.let {
             extractTime(it.groupValues[1])?.let { (h, m) ->
                 val cal = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, 1); set(Calendar.HOUR_OF_DAY, h); set(Calendar.MINUTE, m); set(Calendar.SECOND, 0) }
                 return Result(cal.timeInMillis, text.replace(it.value, "").trim())
@@ -660,25 +660,25 @@ object TimeParser {
             if (day != null && day in 1..31) {
                 var hour = 9; var minute = 0
                 val afterMonth = text.substringAfter(monthWord)
-                Regex("""a las\s+(.+)""").find(afterMonth)?.let { m ->
+                Regex("""a las\s+((?:\S+\s+){0,1}\S+)""").find(afterMonth)?.let { m ->
                     extractTime(m.groupValues[1])?.let { (h, min) -> hour = h; minute = min }
                 }
                 val cal = calendarForDate(month, day, hour, minute)
-                return Result(cal.timeInMillis, text.replace(Regex("""\d+\s*(de\s*)?$monthWord"""), "").replace(Regex("""a las\s+.+"""), "").trim())
+                return Result(cal.timeInMillis, text.replace(Regex("""\d+\s*(de\s*)?$monthWord"""), "").replace(Regex("""a las\s+(?:\S+\s+){0,1}\S+"""), "").trim())
             }
         }
 
         // Day of week ES: "el lunes a las 15:30"
-        parseDayOfWeek(text, esDaysOfWeek, Regex("""a las\s+(.+)"""))?.let { return it }
+        parseDayOfWeek(text, esDaysOfWeek, Regex("""a las\s+((?:\S+\s+){0,1}\S+)"""))?.let { return it }
 
         // "esta tarde a las 7" / "esta noche a las 9"
         if (text.contains("esta tarde") || text.contains("esta noche")) {
             val trigger = if (text.contains("esta tarde")) "esta tarde" else "esta noche"
             val defaultHour = if (text.contains("esta tarde")) 18 else 21
-            Regex("""a las\s+(.+)""").find(text.substringAfter(trigger))?.let {
+            Regex("""a las\s+((?:\S+\s+){0,1}\S+)""").find(text.substringAfter(trigger))?.let {
                 extractTime(it.groupValues[1])?.let { (h, m) ->
                     val cal = Calendar.getInstance().apply { set(Calendar.HOUR_OF_DAY, h); set(Calendar.MINUTE, m); set(Calendar.SECOND, 0) }
-                    return Result(cal.timeInMillis, text.replace(trigger, "").replace(Regex("a las\\s+\\S+"), "").trim())
+                    return Result(cal.timeInMillis, text.replace(trigger, "").replace(Regex("a las\\s+(?:\\S+\\s+){0,1}\\S+"), "").trim())
                 }
             }
             val cal = Calendar.getInstance().apply { set(Calendar.HOUR_OF_DAY, defaultHour); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0) }
@@ -686,7 +686,7 @@ object TimeParser {
         }
 
         // "mañana a las 9:30"
-        Regex("""ma[ñn]ana\s+a las\s+(.+)""").find(text)?.let {
+        Regex("""ma[ñn]ana\s+a las\s+((?:\S+\s+){0,1}\S+)""").find(text)?.let {
             extractTime(it.groupValues[1])?.let { (h, m) ->
                 val cal = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, 1); set(Calendar.HOUR_OF_DAY, h); set(Calendar.MINUTE, m); set(Calendar.SECOND, 0) }
                 return Result(cal.timeInMillis, text.replace(it.value, "").trim())
@@ -702,7 +702,7 @@ object TimeParser {
         }
 
         // "a las 17:30"
-        Regex("""a las\s+(.+)""").find(text)?.let {
+        Regex("""a las\s+((?:\S+\s+){0,1}\S+)""").find(text)?.let {
             extractTime(it.groupValues[1])?.let { (h, m) ->
                 val cal = Calendar.getInstance().apply { set(Calendar.HOUR_OF_DAY, h); set(Calendar.MINUTE, m); set(Calendar.SECOND, 0); if (timeInMillis <= System.currentTimeMillis()) add(Calendar.DAY_OF_YEAR, 1) }
                 return Result(cal.timeInMillis, text.replace(it.value, "").trim())
@@ -746,24 +746,24 @@ object TimeParser {
             if (day != null && day in 1..31) {
                 var hour = 9; var minute = 0
                 val afterMonth = text.substringAfter(monthWord)
-                Regex("""[àa]\s+(.+)""").find(afterMonth)?.let { m ->
+                Regex("""[àa]\s+((?:\S+\s+){0,1}\S+)""").find(afterMonth)?.let { m ->
                     extractTime(m.groupValues[1])?.let { (h, min) -> hour = h; minute = min }
                 }
                 val cal = calendarForDate(month, day, hour, minute)
-                return Result(cal.timeInMillis, text.replace(Regex("""\d+\s*(le\s*)?$monthWord"""), "").replace(Regex("""[àa]\s+.+"""), "").trim())
+                return Result(cal.timeInMillis, text.replace(Regex("""\d+\s*(le\s*)?$monthWord"""), "").replace(Regex("""[àa]\s+(?:\S+\s+){0,1}\S+"""), "").trim())
             }
         }
 
         // Day of week FR: "lundi à 15h30"
-        parseDayOfWeek(text, frDaysOfWeek, Regex("""[àa]\s+(.+)"""))?.let { return it }
+        parseDayOfWeek(text, frDaysOfWeek, Regex("""[àa]\s+((?:\S+\s+){0,1}\S+)"""))?.let { return it }
 
         // "ce soir à 21h" / "cet après-midi à 17h"
         if (text.contains("ce soir") || text.contains("cette nuit")) {
             val trigger = if (text.contains("ce soir")) "ce soir" else "cette nuit"
-            Regex("""[àa]\s+(.+)""").find(text.substringAfter(trigger))?.let {
+            Regex("""[àa]\s+((?:\S+\s+){0,1}\S+)""").find(text.substringAfter(trigger))?.let {
                 extractTime(it.groupValues[1])?.let { (h, m) ->
                     val cal = Calendar.getInstance().apply { set(Calendar.HOUR_OF_DAY, h); set(Calendar.MINUTE, m); set(Calendar.SECOND, 0) }
-                    return Result(cal.timeInMillis, text.replace(trigger, "").replace(Regex("[àa]\\s+\\S+"), "").trim())
+                    return Result(cal.timeInMillis, text.replace(trigger, "").replace(Regex("[àa]\\s+(?:\\S+\\s+){0,1}\\S+"), "").trim())
                 }
             }
             val cal = Calendar.getInstance().apply { set(Calendar.HOUR_OF_DAY, 21); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0) }
@@ -771,7 +771,7 @@ object TimeParser {
         }
 
         // "demain à 9h30"
-        Regex("""demain\s+[àa]\s+(.+)""").find(text)?.let {
+        Regex("""demain\s+[àa]\s+((?:\S+\s+){0,1}\S+)""").find(text)?.let {
             extractTime(it.groupValues[1])?.let { (h, m) ->
                 val cal = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, 1); set(Calendar.HOUR_OF_DAY, h); set(Calendar.MINUTE, m); set(Calendar.SECOND, 0) }
                 return Result(cal.timeInMillis, text.replace(it.value, "").trim())
@@ -787,7 +787,7 @@ object TimeParser {
         }
 
         // "à 17h30" / "à 17:30"
-        Regex("""[àa]\s+(.+)""").find(text)?.let {
+        Regex("""[àa]\s+((?:\S+\s+){0,1}\S+)""").find(text)?.let {
             extractTime(it.groupValues[1])?.let { (h, m) ->
                 val cal = Calendar.getInstance().apply { set(Calendar.HOUR_OF_DAY, h); set(Calendar.MINUTE, m); set(Calendar.SECOND, 0); if (timeInMillis <= System.currentTimeMillis()) add(Calendar.DAY_OF_YEAR, 1) }
                 return Result(cal.timeInMillis, text.replace(it.value, "").trim())
@@ -831,24 +831,24 @@ object TimeParser {
             if (day != null && day in 1..31) {
                 var hour = 9; var minute = 0
                 val afterMonth = text.substringAfter(monthWord)
-                Regex("""alle\s+(.+)""").find(afterMonth)?.let { m ->
+                Regex("""alle\s+((?:\S+\s+){0,1}\S+)""").find(afterMonth)?.let { m ->
                     extractTime(m.groupValues[1])?.let { (h, min) -> hour = h; minute = min }
                 }
                 val cal = calendarForDate(month, day, hour, minute)
-                return Result(cal.timeInMillis, text.replace(Regex("""\d+\s*(di\s*)?$monthWord"""), "").replace(Regex("""alle\s+.+"""), "").trim())
+                return Result(cal.timeInMillis, text.replace(Regex("""\d+\s*(di\s*)?$monthWord"""), "").replace(Regex("""alle\s+(?:\S+\s+){0,1}\S+"""), "").trim())
             }
         }
 
         // Day of week IT: "lunedì alle 15:30"
-        parseDayOfWeek(text, itDaysOfWeek, Regex("""alle\s+(.+)"""))?.let { return it }
+        parseDayOfWeek(text, itDaysOfWeek, Regex("""alle\s+((?:\S+\s+){0,1}\S+)"""))?.let { return it }
 
         // "stasera alle 21:30" / "stanotte alle 23"
         if (text.contains("stasera") || text.contains("stanotte")) {
             val trigger = if (text.contains("stasera")) "stasera" else "stanotte"
-            Regex("""alle\s+(.+)""").find(text.substringAfter(trigger))?.let {
+            Regex("""alle\s+((?:\S+\s+){0,1}\S+)""").find(text.substringAfter(trigger))?.let {
                 extractTime(it.groupValues[1])?.let { (h, m) ->
                     val cal = Calendar.getInstance().apply { set(Calendar.HOUR_OF_DAY, h); set(Calendar.MINUTE, m); set(Calendar.SECOND, 0) }
-                    return Result(cal.timeInMillis, text.replace(trigger, "").replace(Regex("alle\\s+\\S+"), "").trim())
+                    return Result(cal.timeInMillis, text.replace(trigger, "").replace(Regex("alle\\s+(?:\\S+\\s+){0,1}\\S+"), "").trim())
                 }
             }
             val cal = Calendar.getInstance().apply { set(Calendar.HOUR_OF_DAY, 21); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0) }
@@ -856,7 +856,7 @@ object TimeParser {
         }
 
         // "domani alle 9:30"
-        Regex("""domani\s+(?:alle\s+)?(.+)""").find(text)?.let {
+        Regex("""domani\s+(?:alle\s+)?((?:\S+\s+){0,1}\S+)""").find(text)?.let {
             extractTime(it.groupValues[1])?.let { (h, m) ->
                 val cal = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, 1); set(Calendar.HOUR_OF_DAY, h); set(Calendar.MINUTE, m); set(Calendar.SECOND, 0) }
                 return Result(cal.timeInMillis, text.replace(it.value, "").trim())
@@ -872,7 +872,7 @@ object TimeParser {
         }
 
         // "alle 17:30"
-        Regex("""alle\s+(.+)""").find(text)?.let {
+        Regex("""alle\s+((?:\S+\s+){0,1}\S+)""").find(text)?.let {
             extractTime(it.groupValues[1])?.let { (h, m) ->
                 val cal = Calendar.getInstance().apply { set(Calendar.HOUR_OF_DAY, h); set(Calendar.MINUTE, m); set(Calendar.SECOND, 0); if (timeInMillis <= System.currentTimeMillis()) add(Calendar.DAY_OF_YEAR, 1) }
                 return Result(cal.timeInMillis, text.replace(it.value, "").trim())
@@ -915,11 +915,11 @@ object TimeParser {
             if (day != null && day in 1..31) {
                 var hour = 9; var minute = 0
                 val afterMonth = text.substringAfter(monthWord)
-                Regex("""в\s+(.+)""").find(afterMonth)?.let { m ->
+                Regex("""в\s+((?:\S+\s+){0,1}\S+)""").find(afterMonth)?.let { m ->
                     extractTime(m.groupValues[1])?.let { (h, min) -> hour = h; minute = min }
                 }
                 val cal = calendarForDate(month, day, hour, minute)
-                return Result(cal.timeInMillis, text.replace(Regex("""\d+\s*$monthWord"""), "").replace(Regex("""в\s+.+"""), "").trim())
+                return Result(cal.timeInMillis, text.replace(Regex("""\d+\s*$monthWord"""), "").replace(Regex("""в\s+(?:\S+\s+){0,1}\S+"""), "").trim())
             }
         }
 
@@ -931,13 +931,13 @@ object TimeParser {
             Regex("""в\s+(\d[\d:.\s]*)""").find(text)?.let {
                 extractTime(it.groupValues[1])?.let { (h, m) ->
                     val cal = Calendar.getInstance().apply { set(Calendar.HOUR_OF_DAY, h); set(Calendar.MINUTE, m); set(Calendar.SECOND, 0) }
-                    return Result(cal.timeInMillis, text.replace(Regex("(сегодня )?вечером"), "").replace(Regex("в\\s+\\S+"), "").trim())
+                    return Result(cal.timeInMillis, text.replace(Regex("(сегодня )?вечером"), "").replace(Regex("в\\s+(?:\\S+\\s+){0,1}\\S+"), "").trim())
                 }
             }
         }
 
         // "завтра в 9:30"
-        Regex("""завтра\s+в\s+(.+)""").find(text)?.let {
+        Regex("""завтра\s+в\s+((?:\S+\s+){0,1}\S+)""").find(text)?.let {
             extractTime(it.groupValues[1])?.let { (h, m) ->
                 val cal = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, 1); set(Calendar.HOUR_OF_DAY, h); set(Calendar.MINUTE, m); set(Calendar.SECOND, 0) }
                 return Result(cal.timeInMillis, text.replace(it.value, "").trim())
@@ -953,7 +953,7 @@ object TimeParser {
         }
 
         // "в 17:30"
-        Regex("""в\s+(.+)""").find(text)?.let {
+        Regex("""в\s+((?:\S+\s+){0,1}\S+)""").find(text)?.let {
             extractTime(it.groupValues[1])?.let { (h, m) ->
                 val cal = Calendar.getInstance().apply { set(Calendar.HOUR_OF_DAY, h); set(Calendar.MINUTE, m); set(Calendar.SECOND, 0); if (timeInMillis <= System.currentTimeMillis()) add(Calendar.DAY_OF_YEAR, 1) }
                 return Result(cal.timeInMillis, text.replace(it.value, "").trim())
