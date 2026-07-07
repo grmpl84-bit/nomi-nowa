@@ -27,8 +27,12 @@ fun AppNavigation(startWithVoice: Boolean = false) {
                     onAddReminder = { nav.navigate("voice") },
                     onOpenSettings = { nav.navigate("settings") },
                     onOpenHistory = { nav.navigate("history") },
+                    onOpenRecurring = { nav.navigate("recurring") },
                     startRecordingImmediately = startWithVoice
                 )
+            }
+            composable("recurring") {
+                RecurringScreen(onBack = { nav.popBackStack() })
             }
             composable("voice") {
                 VoiceScreen(onBack = { nav.popBackStack() })

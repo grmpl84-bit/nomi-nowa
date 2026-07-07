@@ -1,0 +1,237 @@
+package com.focusremind.app.ui
+
+import android.app.DatePickerDialog
+import android.app.TimePickerDialog
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import com.focusremind.app.FocusRemindApp
+import com.focusremind.app.R
+import com.focusremind.app.data.Reminder
+import com.focusremind.app.notification.ReminderAlarmScheduler
+import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
+
+/**
+ * Dedicated screen for recurring reminders — a completely separate category
+ * from the main one-time reminder list. This is the ONLY place a recurring
+ * reminder's series can be deleted or have its frequency changed; the main
+ * list only shows them (read-only badge) for awareness.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun RecurringScreen(onBack: () -> Unit) {
+    val context = LocalContext.current
+    val dao = (context.applicationContext as FocusRemindApp).database.reminderDao()
+    val scope = rememberCoroutineScope()
+    val reminders by dao.getRecurring().collectAsState(initial = emptyList())
+
+    var showAddDialog by remember { mutableStateOf(false) }
+    var newTitle by remember { mutableStateOf("") }
+    var newDateTime by remember { mutableStateOf<Long?>(null) }
+    var newFrequency by remember { mutableStateOf("DAILY") }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text(stringResource(R.string.recurring_title)) },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.Default.ArrowBack, null)
+                    }
+                }
+            )
+        },
+        floatingActionButton = {
+            FloatingActionButton(onClick = {
+                newTitle = ""
+                newDateTime = null
+                newFrequency = "DAILY"
+                showAddDialog = true
+            }) {
+                Icon(Icons.Default.Add, null)
+            }
+        }
+    ) { padding ->
+        if (reminders.isEmpty()) {
+            Box(
+                Modifier.fillMaxSize().padding(padding),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    stringResource(R.string.no_recurring_reminders),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        } else {
+            LazyColumn(
+                modifier = Modifier.padding(padding).fillMaxSize(),
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                items(reminders, key = { it.id }) { reminder ->
+                    RecurringCard(
+                        reminder = reminder,
+                        onDelete = {
+                            scope.launch {
+                                dao.delete(reminder.id)
+                                ReminderAlarmScheduler.cancel(context, reminder.id)
+                            }
+                        },
+                        onChangeFrequency = { freq ->
+                            scope.launch {
+                                dao.updateRecurrence(reminder.id, freq)
+                                ReminderAlarmScheduler.schedule(context, reminder.copy(recurrence = freq))
+                            }
+                        }
+                    )
+                }
+            }
+        }
+    }
+
+    if (showAddDialog) {
+        AlertDialog(
+            onDismissRequest = { showAddDialog = false },
+            title = { Text(stringResource(R.string.new_recurring_reminder)) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    OutlinedTextField(
+                        value = newTitle,
+                        onValueChange = { newTitle = it },
+                        label = { Text(stringResource(R.string.reminder_label)) },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Text(stringResource(R.string.recurring_frequency_label), style = MaterialTheme.typography.titleSmall)
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        FilterChip(
+                            selected = newFrequency == "DAILY",
+                            onClick = { newFrequency = "DAILY" },
+                            label = { Text(stringResource(R.string.recurrence_daily)) }
+                        )
+                        FilterChip(
+                            selected = newFrequency == "WEEKLY",
+                            onClick = { newFrequency = "WEEKLY" },
+                            label = { Text(stringResource(R.string.recurrence_weekly)) }
+                        )
+                    }
+
+                    val formatted = remember(newDateTime) {
+                        newDateTime?.let {
+                            SimpleDateFormat("EEEE, d MMM yyyy, HH:mm", Locale.getDefault()).format(Date(it))
+                        }
+                    }
+                    OutlinedButton(
+                        onClick = {
+                            val cal = Calendar.getInstance()
+                            DatePickerDialog(context, { _, year, month, day ->
+                                TimePickerDialog(context, { _, hour, minute ->
+                                    val chosen = Calendar.getInstance().apply {
+                                        set(Calendar.YEAR, year)
+                                        set(Calendar.MONTH, month)
+                                        set(Calendar.DAY_OF_MONTH, day)
+                                        set(Calendar.HOUR_OF_DAY, hour)
+                                        set(Calendar.MINUTE, minute)
+                                        set(Calendar.SECOND, 0)
+                                    }
+                                    newDateTime = chosen.timeInMillis
+                                }, cal.get(Calendar.HOUR_OF_DAY), cal.get(Calendar.MINUTE), true).show()
+                            }, cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH)).show()
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(Icons.Default.CalendarMonth, null, Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text(formatted ?: stringResource(R.string.pick_date_time))
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val trigger = newDateTime ?: return@Button
+                        scope.launch {
+                            val id = dao.insert(
+                                Reminder(title = newTitle, triggerAt = trigger, recurrence = newFrequency)
+                            )
+                            ReminderAlarmScheduler.schedule(
+                                context,
+                                Reminder(id = id, title = newTitle, triggerAt = trigger, recurrence = newFrequency)
+                            )
+                        }
+                        showAddDialog = false
+                    },
+                    enabled = newTitle.isNotBlank() && newDateTime != null
+                ) { Text(stringResource(R.string.save)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showAddDialog = false }) { Text(stringResource(R.string.cancel)) }
+            }
+        )
+    }
+}
+
+@Composable
+private fun RecurringCard(reminder: Reminder, onDelete: () -> Unit, onChangeFrequency: (String) -> Unit) {
+    var showFreqMenu by remember { mutableStateOf(false) }
+    val timeFormatted = remember(reminder.triggerAt) {
+        SimpleDateFormat("EEEE, d MMM, HH:mm", Locale.getDefault()).format(Date(reminder.triggerAt))
+    }
+
+    Card(
+        Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(Modifier.padding(16.dp)) {
+            Text(reminder.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+            Spacer(Modifier.height(4.dp))
+            Text(
+                "${stringResource(R.string.next_occurrence_label)} $timeFormatted",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(Modifier.height(12.dp))
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Box(Modifier.weight(1f)) {
+                    OutlinedButton(onClick = { showFreqMenu = true }, modifier = Modifier.fillMaxWidth()) {
+                        Icon(Icons.Default.Repeat, null, Modifier.size(16.dp))
+                        Spacer(Modifier.width(6.dp))
+                        Text(
+                            if (reminder.recurrence == "DAILY") stringResource(R.string.recurrence_daily)
+                            else stringResource(R.string.recurrence_weekly)
+                        )
+                    }
+                    DropdownMenu(expanded = showFreqMenu, onDismissRequest = { showFreqMenu = false }) {
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.recurrence_daily)) },
+                            onClick = { onChangeFrequency("DAILY"); showFreqMenu = false }
+                        )
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.recurrence_weekly)) },
+                            onClick = { onChangeFrequency("WEEKLY"); showFreqMenu = false }
+                        )
+                    }
+                }
+                IconButton(onClick = onDelete) {
+                    Icon(Icons.Default.Delete, null, tint = MaterialTheme.colorScheme.error)
+                }
+            }
+        }
+    }
+}

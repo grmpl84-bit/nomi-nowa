@@ -69,6 +69,14 @@
     <string name="recurrence_none">Une fois</string>
     <string name="recurrence_daily">Quotidien</string>
     <string name="recurrence_weekly">Hebdomadaire</string>
+    <string name="recurring_manage_hint">Gérez les rappels récurrents depuis la section dédiée en bas</string>
+    <string name="recurring_title">Rappels récurrents</string>
+    <string name="recurring_nav_label">Récurrent</string>
+    <string name="reminders_nav_label">Liste</string>
+    <string name="new_recurring_reminder">Nouveau rappel récurrent</string>
+    <string name="recurring_frequency_label">Fréquence</string>
+    <string name="no_recurring_reminders">Aucun rappel récurrent</string>
+    <string name="next_occurrence_label">Prochaine occurrence :</string>
     <string name="photo_description">Ajoutez une photo à ce rappel, par ex. un produit en magasin.</string>
     <string name="photo_info">La photo sera visible sur la carte du rappel.</string>
     <string name="donation_message">Chaque projet représente des heures de travail, de tests et de corrections. Si ce que je crée vous a été utile – vous pouvez m\'offrir un café ☕ Votre soutien fait vraiment la différence et me permet de grandir et de créer de nouveaux outils. Merci !</string>

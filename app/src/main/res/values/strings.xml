@@ -69,6 +69,14 @@
     <string name="recurrence_none">Jednorazowo</string>
     <string name="recurrence_daily">Codziennie</string>
     <string name="recurrence_weekly">Co tydzień</string>
+    <string name="recurring_manage_hint">Zarządzaj cyklicznymi przypomnieniami z osobnej sekcji na dole ekranu</string>
+    <string name="recurring_title">Cykliczne przypomnienia</string>
+    <string name="recurring_nav_label">Cykliczne</string>
+    <string name="reminders_nav_label">Lista</string>
+    <string name="new_recurring_reminder">Nowe cykliczne przypomnienie</string>
+    <string name="recurring_frequency_label">Częstotliwość</string>
+    <string name="no_recurring_reminders">Brak cyklicznych przypomnień</string>
+    <string name="next_occurrence_label">Następny termin:</string>
     <string name="photo_description">Dodaj zdjęcie do tego przypomnienia, np. produkt w sklepie.</string>
     <string name="photo_info">Zdjęcie będzie widoczne na karcie przypomnienia.</string>
     <string name="donation_message">Każdy projekt to godziny pracy, testów i poprawek. Jeśli to, co tworzę, było dla Ciebie pomocne – możesz postawić mi kawę ☕ Twoje wsparcie naprawdę zrobi różnicę i pozwoli mi się rozwijać i tworzyć nowe narzędzia. Dziękuję!</string>

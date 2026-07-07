@@ -56,7 +56,7 @@ import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
 @Composable
-fun HomeScreen(onAddReminder: () -> Unit, onOpenSettings: () -> Unit, onOpenHistory: () -> Unit, startRecordingImmediately: Boolean = false) {
+fun HomeScreen(onAddReminder: () -> Unit, onOpenSettings: () -> Unit, onOpenHistory: () -> Unit, onOpenRecurring: () -> Unit, startRecordingImmediately: Boolean = false) {
     val context = LocalContext.current
     val dao = FocusRemindApp.instance.database.reminderDao()
     val reminders by dao.getActive().collectAsState(initial = emptyList())
@@ -619,6 +619,22 @@ fun HomeScreen(onAddReminder: () -> Unit, onOpenSettings: () -> Unit, onOpenHist
                 }
             )
         },
+        bottomBar = {
+            NavigationBar {
+                NavigationBarItem(
+                    selected = true,
+                    onClick = { /* already here */ },
+                    icon = { Icon(Icons.Default.List, null) },
+                    label = { Text(stringResource(R.string.reminders_nav_label)) }
+                )
+                NavigationBarItem(
+                    selected = false,
+                    onClick = onOpenRecurring,
+                    icon = { Icon(Icons.Default.Repeat, null) },
+                    label = { Text(stringResource(R.string.recurring_nav_label)) }
+                )
+            }
+        },
         floatingActionButton = {
             val pulse = rememberInfiniteTransition(label = "p")
                 .animateFloat(1f, 1.15f, infiniteRepeatable(tween(600), RepeatMode.Reverse), label = "s")
@@ -743,14 +759,12 @@ fun HomeScreen(onAddReminder: () -> Unit, onOpenSettings: () -> Unit, onOpenHist
                             photoReminder = reminder
                             showPhotoOptions = true
                         },
-                        onSetRecurrence = { newRecurrence ->
-                            scope.launch {
-                                dao.updateRecurrence(reminder.id, newRecurrence)
-                                // Re-schedule so the pending alarm's own extras carry the
-                                // updated recurrence value (needed for the auto-reschedule
-                                // logic in AlarmReceiver/ReminderWorker to know about it).
-                                ReminderAlarmScheduler.schedule(context, reminder.copy(recurrence = newRecurrence))
-                            }
+                        onLockedDeleteTap = {
+                            android.widget.Toast.makeText(
+                                context,
+                                context.getString(R.string.recurring_manage_hint),
+                                android.widget.Toast.LENGTH_SHORT
+                            ).show()
                         }
                     )
                 }
@@ -761,8 +775,7 @@ fun HomeScreen(onAddReminder: () -> Unit, onOpenSettings: () -> Unit, onOpenHist
 }
 
 @Composable
-fun ReminderCard(reminder: Reminder, onComplete: () -> Unit, onEdit: () -> Unit, onSnooze: () -> Unit, onDelete: () -> Unit, onAddPhoto: () -> Unit, onSetRecurrence: (String?) -> Unit) {
-    var showRecurrenceMenu by remember { mutableStateOf(false) }
+fun ReminderCard(reminder: Reminder, onComplete: () -> Unit, onEdit: () -> Unit, onSnooze: () -> Unit, onDelete: () -> Unit, onAddPhoto: () -> Unit, onLockedDeleteTap: () -> Unit) {
     val overdueText = stringResource(R.string.overdue)
     val timeText = remember(reminder.triggerAt) {
         val diff = reminder.triggerAt - System.currentTimeMillis()
@@ -862,35 +875,16 @@ fun ReminderCard(reminder: Reminder, onComplete: () -> Unit, onEdit: () -> Unit,
                 IconButton(onClick = onAddPhoto, modifier = Modifier.size(36.dp)) {
                     Icon(Icons.Default.CameraAlt, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
-                // Recurrence button (icon only) — opens a small menu to pick none/daily/weekly
-                Box {
-                    IconButton(onClick = { showRecurrenceMenu = true }, modifier = Modifier.size(36.dp)) {
-                        Icon(
-                            Icons.Default.Repeat,
-                            null,
-                            Modifier.size(18.dp),
-                            tint = if (reminder.recurrence != null) MaterialTheme.colorScheme.primary
-                                   else MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                // Delete button — disabled for recurring reminders; those can only be
+                // stopped/deleted from the dedicated "Cykliczne" screen (bottom entry).
+                if (reminder.recurrence == null) {
+                    IconButton(onClick = onDelete, modifier = Modifier.size(36.dp)) {
+                        Icon(Icons.Default.Delete, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.error)
                     }
-                    DropdownMenu(expanded = showRecurrenceMenu, onDismissRequest = { showRecurrenceMenu = false }) {
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.recurrence_none)) },
-                            onClick = { onSetRecurrence(null); showRecurrenceMenu = false }
-                        )
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.recurrence_daily)) },
-                            onClick = { onSetRecurrence("DAILY"); showRecurrenceMenu = false }
-                        )
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.recurrence_weekly)) },
-                            onClick = { onSetRecurrence("WEEKLY"); showRecurrenceMenu = false }
-                        )
+                } else {
+                    IconButton(onClick = onLockedDeleteTap, modifier = Modifier.size(36.dp)) {
+                        Icon(Icons.Default.Lock, null, Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f))
                     }
-                }
-                // Delete button (icon only)
-                IconButton(onClick = onDelete, modifier = Modifier.size(36.dp)) {
-                    Icon(Icons.Default.Delete, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.error)
                 }
             }
         }

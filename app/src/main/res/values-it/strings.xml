@@ -69,6 +69,14 @@
     <string name="recurrence_none">Una tantum</string>
     <string name="recurrence_daily">Ogni giorno</string>
     <string name="recurrence_weekly">Ogni settimana</string>
+    <string name="recurring_manage_hint">Gestisci i promemoria ricorrenti dalla sezione dedicata in basso</string>
+    <string name="recurring_title">Promemoria ricorrenti</string>
+    <string name="recurring_nav_label">Ricorrente</string>
+    <string name="reminders_nav_label">Elenco</string>
+    <string name="new_recurring_reminder">Nuovo promemoria ricorrente</string>
+    <string name="recurring_frequency_label">Frequenza</string>
+    <string name="no_recurring_reminders">Nessun promemoria ricorrente</string>
+    <string name="next_occurrence_label">Prossima occorrenza:</string>
     <string name="photo_description">Aggiungi una foto a questo promemoria, es. un prodotto in negozio.</string>
     <string name="photo_info">La foto sarà visibile sulla scheda del promemoria.</string>
     <string name="donation_message">Ogni progetto richiede ore di lavoro, test e correzioni. Se ciò che creo ti è stato utile – puoi offrirmi un caffè ☕ Il tuo supporto fa davvero la differenza e mi aiuta a crescere e creare nuovi strumenti. Grazie!</string>

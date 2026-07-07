@@ -10,7 +10,6 @@ data class Reminder(
     val triggerAt: Long,
     val isCompleted: Boolean = false,
     val completedAt: Long? = null,
-    val priority: Int = 0, // 0=normal, 1=high, 2=urgent
     val nagMode: Boolean = false,
     val isVoiceCreated: Boolean = false,
     val originalVoiceText: String? = null,
@@ -23,6 +22,9 @@ data class Reminder(
 interface ReminderDao {
     @Query("SELECT * FROM reminders WHERE isCompleted = 0 ORDER BY triggerAt ASC")
     fun getActive(): Flow<List<Reminder>>
+
+    @Query("SELECT * FROM reminders WHERE recurrence IS NOT NULL ORDER BY triggerAt ASC")
+    fun getRecurring(): Flow<List<Reminder>>
 
     @Query("SELECT * FROM reminders WHERE isCompleted = 1 ORDER BY completedAt DESC LIMIT 50")
     fun getCompleted(): Flow<List<Reminder>>
@@ -58,7 +60,7 @@ interface ReminderDao {
     suspend fun getById(id: Long): Reminder?
 }
 
-@Database(entities = [Reminder::class], version = 4)
+@Database(entities = [Reminder::class], version = 5)
 abstract class FocusRemindDatabase : RoomDatabase() {
     abstract fun reminderDao(): ReminderDao
 }
