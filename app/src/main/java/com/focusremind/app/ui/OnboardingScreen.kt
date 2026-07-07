@@ -37,8 +37,11 @@ private const val TOTAL_PAGES = 5
 fun OnboardingScreen(onFinished: () -> Unit) {
     val context = LocalContext.current
     val prefs = remember { context.getSharedPreferences("nomi_prefs", Context.MODE_PRIVATE) }
-    // If language was already chosen (Activity restarted after locale change), skip to page 1
-    val languageAlreadyChosen = remember { prefs.getBoolean("onboarding_language_chosen", false) }
+    // Source of truth: ask Android's own per-app locale API directly, instead of
+    // a custom SharedPreferences flag. This avoids any write/restart race entirely —
+    // AppCompatDelegate is the same object that triggers the restart below, so
+    // reading it fresh after recreation is always accurate, no disk-write timing involved.
+    val languageAlreadyChosen = remember { !AppCompatDelegate.getApplicationLocales().isEmpty() }
     val startPage = if (languageAlreadyChosen) 1 else 0
     val pagerState = rememberPagerState(initialPage = startPage, pageCount = { TOTAL_PAGES })
     val scope = rememberCoroutineScope()
@@ -56,20 +59,20 @@ fun OnboardingScreen(onFinished: () -> Unit) {
                     // === PAGE 0: LANGUAGE SELECTION (no translations needed - flags speak for themselves) ===
                     0 -> LanguageSelectionPage(
                         onLanguageSelected = { langCode ->
-                            // Save flag BEFORE locale change (Activity will restart!)
-                            // MUST use commit() (synchronous), not apply() (async) —
-                            // setApplicationLocales() below can kill/restart the process
-                            // almost immediately, and an in-flight apply() write can be
-                            // lost, causing the app to land back on page 0 after restart.
-                            prefs.edit().putBoolean("onboarding_language_chosen", true).commit()
-                            // Apply language immediately so next pages are translated
+                            // Apply language immediately so next pages are translated.
+                            // On Android 13+ / AppCompat, this restarts the Activity
+                            // if the locale actually changes.
                             if (langCode.isNotEmpty()) {
                                 AppCompatDelegate.setApplicationLocales(
                                     LocaleListCompat.forLanguageTags(langCode)
                                 )
                             }
-                            // Note: setApplicationLocales() restarts Activity.
-                            // After restart, languageAlreadyChosen=true → pager starts at page 1.
+                            // Defensive fallback: if the chosen language matches the
+                            // locale already in effect, setApplicationLocales() is a
+                            // no-op and no restart happens — so also advance manually.
+                            // If a restart DOES happen, this call is simply interrupted
+                            // by Activity recreation, which is harmless.
+                            scope.launch { pagerState.scrollToPage(1) }
                         }
                     )
 
@@ -136,7 +139,6 @@ fun OnboardingScreen(onFinished: () -> Unit) {
                         onButtonClick = {
                             prefs.edit()
                                 .putBoolean("onboarding_done", true)
-                                .putBoolean("onboarding_language_chosen", false)
                                 .apply()
                             onFinished()
                         }
