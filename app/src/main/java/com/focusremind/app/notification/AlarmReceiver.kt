@@ -16,6 +16,11 @@ import android.os.Vibrator
 import android.os.VibratorManager
 import android.util.Log
 import androidx.core.content.ContextCompat
+import com.focusremind.app.FocusRemindApp
+import com.focusremind.app.data.Reminder
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 /**
  * Fired by AlarmManager at the exact scheduled time.
@@ -34,6 +39,8 @@ class AlarmReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val reminderId = intent.getLongExtra("reminder_id", -1)
         val title = intent.getStringExtra("reminder_title") ?: "Przypomnienie"
+        val recurrence = intent.getStringExtra("reminder_recurrence")
+        val triggerAt = intent.getLongExtra("reminder_trigger_at", System.currentTimeMillis())
 
         Log.d(TAG, "🔔 AlarmReceiver.onReceive FIRED! reminder=$reminderId, title='$title'")
 
@@ -120,6 +127,31 @@ class AlarmReceiver : BroadcastReceiver() {
                 Log.d(TAG, "Vibration started (repeating)")
             } catch (e: Exception) {
                 Log.w(TAG, "Vibration failed", e)
+            }
+        }
+
+        // === RECURRING REMINDER: schedule the next occurrence right away ===
+        // Done here (not only when user taps "Zrobione") so a daily/weekly
+        // reminder never breaks its chain even if the user ignores this one.
+        if (recurrence != null) {
+            val pendingResult = goAsync()
+            CoroutineScope(Dispatchers.IO).launch {
+                try {
+                    val nextTrigger = ReminderAlarmScheduler.nextTriggerTime(triggerAt, recurrence)
+                    FocusRemindApp.instance.database.reminderDao().snooze(reminderId, nextTrigger)
+                    // Reset the "already fired" flag so the new cycle's backup Worker works correctly
+                    context.getSharedPreferences("nomi_alarm_flags", Context.MODE_PRIVATE)
+                        .edit().putBoolean("fired_$reminderId", false).apply()
+                    ReminderAlarmScheduler.schedule(
+                        context,
+                        Reminder(id = reminderId, title = title, triggerAt = nextTrigger, recurrence = recurrence)
+                    )
+                    Log.d(TAG, "Recurring reminder $reminderId ($recurrence) rescheduled for $nextTrigger")
+                } catch (e: Exception) {
+                    Log.e(TAG, "Failed to reschedule recurring reminder $reminderId", e)
+                } finally {
+                    pendingResult.finish()
+                }
             }
         }
     }

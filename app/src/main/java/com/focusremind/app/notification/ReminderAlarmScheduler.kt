@@ -69,6 +69,8 @@ object ReminderAlarmScheduler {
         val intent = Intent(context, AlarmReceiver::class.java).apply {
             putExtra("reminder_id", reminder.id)
             putExtra("reminder_title", reminder.title)
+            putExtra("reminder_recurrence", reminder.recurrence)
+            putExtra("reminder_trigger_at", triggerTime)
         }
 
         val pendingIntent = PendingIntent.getBroadcast(
@@ -114,6 +116,8 @@ object ReminderAlarmScheduler {
         val data = Data.Builder()
             .putLong("reminder_id", reminder.id)
             .putString("reminder_title", reminder.title)
+            .putString("reminder_recurrence", reminder.recurrence)
+            .putLong("reminder_trigger_at", triggerTime)
             .build()
 
         // +60s delay: gives AlarmReceiver time to fire first and set the flag.
@@ -132,6 +136,18 @@ object ReminderAlarmScheduler {
                 ExistingWorkPolicy.REPLACE,
                 workRequest
             )
+    }
+
+    /**
+     * Computes the next trigger time for a recurring reminder, based on the
+     * time it was JUST scheduled for (not "now") — so the time-of-day stays
+     * exact (e.g. daily medication always at 8:00, even if this alarm fired
+     * a few minutes late).
+     */
+    fun nextTriggerTime(previousTriggerAt: Long, recurrence: String): Long = when (recurrence) {
+        "DAILY" -> previousTriggerAt + TimeUnit.DAYS.toMillis(1)
+        "WEEKLY" -> previousTriggerAt + TimeUnit.DAYS.toMillis(7)
+        else -> previousTriggerAt
     }
 
     fun cancel(context: Context, reminderId: Long) {

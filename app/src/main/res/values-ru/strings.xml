@@ -66,6 +66,9 @@
     <string name="take_photo">Сделать фото</string>
     <string name="from_gallery">Выбрать из галереи</string>
     <string name="photo_attached">Фото прикреплено</string>
+    <string name="recurrence_none">Разово</string>
+    <string name="recurrence_daily">Ежедневно</string>
+    <string name="recurrence_weekly">Еженедельно</string>
     <string name="photo_description">Добавьте фото к этому напоминанию, напр. товар в магазине.</string>
     <string name="photo_info">Фото будет видно на карточке напоминания.</string>
     <string name="donation_message">Каждый проект — это часы работы, тестов и исправлений. Если то, что я создаю, было вам полезно — вы можете угостить меня кофе ☕ Ваша поддержка действительно имеет значение и помогает мне расти и создавать новые инструменты. Спасибо!</string>

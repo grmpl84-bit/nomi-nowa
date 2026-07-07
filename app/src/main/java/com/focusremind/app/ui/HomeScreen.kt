@@ -742,6 +742,15 @@ fun HomeScreen(onAddReminder: () -> Unit, onOpenSettings: () -> Unit, onOpenHist
                         onAddPhoto = {
                             photoReminder = reminder
                             showPhotoOptions = true
+                        },
+                        onSetRecurrence = { newRecurrence ->
+                            scope.launch {
+                                dao.updateRecurrence(reminder.id, newRecurrence)
+                                // Re-schedule so the pending alarm's own extras carry the
+                                // updated recurrence value (needed for the auto-reschedule
+                                // logic in AlarmReceiver/ReminderWorker to know about it).
+                                ReminderAlarmScheduler.schedule(context, reminder.copy(recurrence = newRecurrence))
+                            }
                         }
                     )
                 }
@@ -752,7 +761,8 @@ fun HomeScreen(onAddReminder: () -> Unit, onOpenSettings: () -> Unit, onOpenHist
 }
 
 @Composable
-fun ReminderCard(reminder: Reminder, onComplete: () -> Unit, onEdit: () -> Unit, onSnooze: () -> Unit, onDelete: () -> Unit, onAddPhoto: () -> Unit) {
+fun ReminderCard(reminder: Reminder, onComplete: () -> Unit, onEdit: () -> Unit, onSnooze: () -> Unit, onDelete: () -> Unit, onAddPhoto: () -> Unit, onSetRecurrence: (String?) -> Unit) {
+    var showRecurrenceMenu by remember { mutableStateOf(false) }
     val overdueText = stringResource(R.string.overdue)
     val timeText = remember(reminder.triggerAt) {
         val diff = reminder.triggerAt - System.currentTimeMillis()
@@ -790,11 +800,23 @@ fun ReminderCard(reminder: Reminder, onComplete: () -> Unit, onEdit: () -> Unit,
                 Column(Modifier.weight(1f)) {
                     Text(reminder.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                     Spacer(Modifier.height(2.dp))
-                    Text(
-                        timeText,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = if (isOverdue) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            timeText,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = if (isOverdue) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        if (reminder.recurrence != null) {
+                            Spacer(Modifier.width(6.dp))
+                            Text(
+                                if (reminder.recurrence == "DAILY") "🔁 ${stringResource(R.string.recurrence_daily)}"
+                                else "🔁 ${stringResource(R.string.recurrence_weekly)}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.primary,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
                 }
             }
 
@@ -839,6 +861,32 @@ fun ReminderCard(reminder: Reminder, onComplete: () -> Unit, onEdit: () -> Unit,
                 // Photo button (icon only)
                 IconButton(onClick = onAddPhoto, modifier = Modifier.size(36.dp)) {
                     Icon(Icons.Default.CameraAlt, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                // Recurrence button (icon only) — opens a small menu to pick none/daily/weekly
+                Box {
+                    IconButton(onClick = { showRecurrenceMenu = true }, modifier = Modifier.size(36.dp)) {
+                        Icon(
+                            Icons.Default.Repeat,
+                            null,
+                            Modifier.size(18.dp),
+                            tint = if (reminder.recurrence != null) MaterialTheme.colorScheme.primary
+                                   else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    DropdownMenu(expanded = showRecurrenceMenu, onDismissRequest = { showRecurrenceMenu = false }) {
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.recurrence_none)) },
+                            onClick = { onSetRecurrence(null); showRecurrenceMenu = false }
+                        )
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.recurrence_daily)) },
+                            onClick = { onSetRecurrence("DAILY"); showRecurrenceMenu = false }
+                        )
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.recurrence_weekly)) },
+                            onClick = { onSetRecurrence("WEEKLY"); showRecurrenceMenu = false }
+                        )
+                    }
                 }
                 // Delete button (icon only)
                 IconButton(onClick = onDelete, modifier = Modifier.size(36.dp)) {

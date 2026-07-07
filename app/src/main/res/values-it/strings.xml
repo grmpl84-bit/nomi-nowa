@@ -66,6 +66,9 @@
     <string name="take_photo">Scatta foto</string>
     <string name="from_gallery">Scegli dalla galleria</string>
     <string name="photo_attached">Foto allegata</string>
+    <string name="recurrence_none">Una tantum</string>
+    <string name="recurrence_daily">Ogni giorno</string>
+    <string name="recurrence_weekly">Ogni settimana</string>
     <string name="photo_description">Aggiungi una foto a questo promemoria, es. un prodotto in negozio.</string>
     <string name="photo_info">La foto sarà visibile sulla scheda del promemoria.</string>
     <string name="donation_message">Ogni progetto richiede ore di lavoro, test e correzioni. Se ciò che creo ti è stato utile – puoi offrirmi un caffè ☕ Il tuo supporto fa davvero la differenza e mi aiuta a crescere e creare nuovi strumenti. Grazie!</string>

@@ -66,6 +66,9 @@
     <string name="take_photo">Foto aufnehmen</string>
     <string name="from_gallery">Aus Galerie wählen</string>
     <string name="photo_attached">Foto angehängt</string>
+    <string name="recurrence_none">Einmalig</string>
+    <string name="recurrence_daily">Täglich</string>
+    <string name="recurrence_weekly">Wöchentlich</string>
     <string name="photo_description">Füge ein Foto zur Erinnerung hinzu, z.B. ein Produkt im Laden.</string>
     <string name="photo_info">Das Foto wird auf der Erinnerungskarte angezeigt.</string>
     <string name="donation_message">Jedes Projekt kostet Stunden an Arbeit, Tests und Korrekturen. Wenn das, was ich erstelle, dir geholfen hat – kannst du mir einen Kaffee spendieren ☕ Deine Unterstützung macht wirklich einen Unterschied und hilft mir, mich weiterzuentwickeln und neue Werkzeuge zu schaffen. Danke!</string>

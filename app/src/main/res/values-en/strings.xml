@@ -66,6 +66,9 @@
     <string name="take_photo">Take photo</string>
     <string name="from_gallery">Choose from gallery</string>
     <string name="photo_attached">Photo attached</string>
+    <string name="recurrence_none">One-time</string>
+    <string name="recurrence_daily">Daily</string>
+    <string name="recurrence_weekly">Weekly</string>
     <string name="photo_description">Add a photo to this reminder, e.g. a product in a store.</string>
     <string name="photo_info">The photo will be visible on the reminder card.</string>
     <string name="donation_message">Every project takes hours of work, testing, and fixes. If what I create has been helpful to you – you can buy me a coffee ☕ Your support truly makes a difference and helps me grow and create new tools. Thank you!</string>

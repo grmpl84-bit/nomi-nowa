@@ -66,6 +66,9 @@
     <string name="take_photo">Tomar foto</string>
     <string name="from_gallery">Elegir de la galería</string>
     <string name="photo_attached">Foto adjunta</string>
+    <string name="recurrence_none">Una vez</string>
+    <string name="recurrence_daily">Diariamente</string>
+    <string name="recurrence_weekly">Semanalmente</string>
     <string name="photo_description">Añade una foto a este recordatorio, ej. un producto en la tienda.</string>
     <string name="photo_info">La foto será visible en la tarjeta del recordatorio.</string>
     <string name="donation_message">Cada proyecto requiere horas de trabajo, pruebas y correcciones. Si lo que creo te ha sido útil – puedes invitarme a un café ☕ Tu apoyo realmente marca la diferencia y me ayuda a crecer y crear nuevas herramientas. ¡Gracias!</string>

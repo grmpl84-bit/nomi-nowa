@@ -66,6 +66,9 @@
     <string name="take_photo">Zrób zdjęcie</string>
     <string name="from_gallery">Wybierz z galerii</string>
     <string name="photo_attached">Zdjęcie załączone</string>
+    <string name="recurrence_none">Jednorazowo</string>
+    <string name="recurrence_daily">Codziennie</string>
+    <string name="recurrence_weekly">Co tydzień</string>
     <string name="photo_description">Dodaj zdjęcie do tego przypomnienia, np. produkt w sklepie.</string>
     <string name="photo_info">Zdjęcie będzie widoczne na karcie przypomnienia.</string>
     <string name="donation_message">Każdy projekt to godziny pracy, testów i poprawek. Jeśli to, co tworzę, było dla Ciebie pomocne – możesz postawić mi kawę ☕ Twoje wsparcie naprawdę zrobi różnicę i pozwoli mi się rozwijać i tworzyć nowe narzędzia. Dziękuję!</string>

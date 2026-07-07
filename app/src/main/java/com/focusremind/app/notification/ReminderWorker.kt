@@ -12,6 +12,8 @@ import android.util.Log
 import androidx.core.content.ContextCompat
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
+import com.focusremind.app.FocusRemindApp
+import com.focusremind.app.data.Reminder
 
 /**
  * WorkManager backup for notifications.
@@ -33,6 +35,8 @@ class ReminderWorker(
     override suspend fun doWork(): Result {
         val reminderId = inputData.getLong("reminder_id", -1)
         val title = inputData.getString("reminder_title") ?: "Przypomnienie"
+        val recurrence = inputData.getString("reminder_recurrence")
+        val triggerAt = inputData.getLong("reminder_trigger_at", System.currentTimeMillis())
 
         if (reminderId == -1L) return Result.failure()
 
@@ -51,6 +55,24 @@ class ReminderWorker(
         // AlarmReceiver didn't fire — show notification ourselves
         Log.w(TAG, "⚠️ AlarmReceiver DID NOT fire! WorkManager backup showing notification.")
         showNotification(reminderId, title)
+
+        // Recurring reminder: since we're the ones who actually fired (AlarmReceiver
+        // didn't), we're responsible for scheduling the next occurrence too.
+        if (recurrence != null) {
+            try {
+                val nextTrigger = ReminderAlarmScheduler.nextTriggerTime(triggerAt, recurrence)
+                FocusRemindApp.instance.database.reminderDao().snooze(reminderId, nextTrigger)
+                alarmFlags.edit().putBoolean("fired_$reminderId", false).apply()
+                ReminderAlarmScheduler.schedule(
+                    context,
+                    Reminder(id = reminderId, title = title, triggerAt = nextTrigger, recurrence = recurrence)
+                )
+                Log.d(TAG, "Recurring reminder $reminderId ($recurrence) rescheduled for $nextTrigger (via backup)")
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to reschedule recurring reminder $reminderId", e)
+            }
+        }
+
         return Result.success()
     }
 

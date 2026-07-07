@@ -15,6 +15,7 @@ data class Reminder(
     val isVoiceCreated: Boolean = false,
     val originalVoiceText: String? = null,
     val photoUri: String? = null,
+    val recurrence: String? = null, // null = one-time, "DAILY", "WEEKLY"
     val createdAt: Long = System.currentTimeMillis()
 )
 
@@ -47,6 +48,9 @@ interface ReminderDao {
     @Query("UPDATE reminders SET photoUri = :uri WHERE id = :id")
     suspend fun updatePhoto(id: Long, uri: String?)
 
+    @Query("UPDATE reminders SET recurrence = :recurrence WHERE id = :id")
+    suspend fun updateRecurrence(id: Long, recurrence: String?)
+
     @Query("DELETE FROM reminders WHERE id = :id")
     suspend fun delete(id: Long)
 
@@ -54,7 +58,7 @@ interface ReminderDao {
     suspend fun getById(id: Long): Reminder?
 }
 
-@Database(entities = [Reminder::class], version = 3)
+@Database(entities = [Reminder::class], version = 4)
 abstract class FocusRemindDatabase : RoomDatabase() {
     abstract fun reminderDao(): ReminderDao
 }
