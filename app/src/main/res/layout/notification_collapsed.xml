@@ -6,32 +6,6 @@
     android:padding="12dp"
     android:background="@drawable/notification_gradient_bg">
 
-    <!-- Header row: icon + app name -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:layout_marginBottom="4dp">
-
-        <ImageView
-            android:layout_width="16dp"
-            android:layout_height="16dp"
-            android:src="@android:drawable/ic_lock_idle_alarm"
-            android:tint="#FFFFFF"
-            android:layout_marginEnd="6dp" />
-
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Nomi"
-            android:textColor="#F0E6FF"
-            android:textSize="11sp"
-            android:letterSpacing="0.05" />
-
-    </LinearLayout>
-
     <!-- Reminder title — big and prominent -->
     <TextView
         android:id="@+id/notif_title"

@@ -11,7 +11,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import com.focusremind.app.data.Reminder
 import com.focusremind.app.notification.ReminderAlarmScheduler
-import com.focusremind.app.notification.SoundPlayer
 import com.focusremind.app.speech.TimeParser
 import com.focusremind.app.ui.AppNavigation
 import com.focusremind.app.ui.theme.FocusRemindTheme
@@ -30,15 +29,10 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        // Only stop the alarm sound/vibration when user opens from notification tap
-        if (savedInstanceState == null && intent?.hasExtra("reminder_id") == true) {
-            SoundPlayer.stop()
-            val reminderId = intent?.getLongExtra("reminder_id", -1) ?: -1
-            if (reminderId != -1L) {
-                (getSystemService(NOTIFICATION_SERVICE) as android.app.NotificationManager)
-                    .cancel(reminderId.toInt())
-            }
-        }
+        // Note: tapping the notification body (not a button) intentionally does
+        // NOT stop the alarm sound/vibration or dismiss the notification anymore —
+        // only the explicit action buttons (Done/+5/+15) should do that. Tapping
+        // just opens the app so the user can see the reminder while it keeps ringing.
 
         // Handle Google Assistant "Create Note" intent
         val reminderText = intent?.getStringExtra("reminder_text")
