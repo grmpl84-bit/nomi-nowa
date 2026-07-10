@@ -32,8 +32,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -602,22 +604,38 @@ fun HomeScreen(onAddReminder: () -> Unit, onOpenSettings: () -> Unit, onOpenHist
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { 
-                    Column {
-                        Text("nomi", fontWeight = FontWeight.Bold)
-                        Text("Just Say It. We'll Remember.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(bottomStart = 28.dp, bottomEnd = 28.dp))
+                    .background(
+                        Brush.linearGradient(
+                            colors = listOf(Color(0xFF9C27B0), Color(0xFF7C4DFF), Color(0xFF00BCD4))
+                        )
+                    )
+                    .windowInsetsPadding(WindowInsets.statusBars)
+                    .padding(horizontal = 20.dp, vertical = 14.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(Modifier.weight(1f)) {
+                        Text("nomi", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 20.sp)
+                        Text(
+                            "Just Say It. We'll Remember.",
+                            color = Color.White.copy(alpha = 0.85f),
+                            style = MaterialTheme.typography.bodySmall
+                        )
                     }
-                },
-                actions = {
                     IconButton(onClick = onOpenHistory) {
-                        Icon(Icons.Default.History, "Historia")
+                        Icon(Icons.Default.History, "Historia", tint = Color.White)
                     }
                     IconButton(onClick = onOpenSettings) {
-                        Icon(Icons.Default.Settings, stringResource(R.string.settings))
+                        Icon(Icons.Default.Settings, stringResource(R.string.settings), tint = Color.White)
                     }
                 }
-            )
+            }
         },
         bottomBar = {
             NavigationBar {
@@ -655,18 +673,38 @@ fun HomeScreen(onAddReminder: () -> Unit, onOpenSettings: () -> Unit, onOpenHist
                     },
                 contentAlignment = Alignment.Center
             ) {
-                Surface(
-                    modifier = Modifier.size(96.dp),
-                    shape = CircleShape,
-                    color = if (isListening) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primaryContainer,
-                    shadowElevation = 6.dp
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
+                if (isListening) {
+                    Surface(
+                        modifier = Modifier.size(96.dp),
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.error,
+                        shadowElevation = 6.dp
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                Icons.Default.Mic,
+                                stringResource(R.string.tap_mic),
+                                Modifier.size(36.dp),
+                                tint = MaterialTheme.colorScheme.onError
+                            )
+                        }
+                    }
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .size(96.dp)
+                            .shadow(6.dp, CircleShape)
+                            .clip(CircleShape)
+                            .background(
+                                Brush.linearGradient(listOf(Color(0xFF9C27B0), Color(0xFF7C4DFF), Color(0xFF00BCD4)))
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
                         Icon(
                             Icons.Default.Mic,
                             stringResource(R.string.tap_mic),
                             Modifier.size(36.dp),
-                            tint = if (isListening) MaterialTheme.colorScheme.onError else MaterialTheme.colorScheme.onPrimaryContainer
+                            tint = Color.White
                         )
                     }
                 }
@@ -799,14 +837,14 @@ fun ReminderCard(reminder: Reminder, onComplete: () -> Unit, onEdit: () -> Unit,
     ) {
         Column(Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                // Color accent dot
+                // Color accent dot — brand gradient, red for overdue
                 Box(
                     modifier = Modifier
                         .size(10.dp)
                         .clip(CircleShape)
                         .background(
-                            if (isOverdue) MaterialTheme.colorScheme.error
-                            else MaterialTheme.colorScheme.primary
+                            if (isOverdue) SolidColor(MaterialTheme.colorScheme.error)
+                            else Brush.linearGradient(listOf(Color(0xFF9C27B0), Color(0xFF00BCD4)))
                         )
                 )
                 Spacer(Modifier.width(10.dp))
