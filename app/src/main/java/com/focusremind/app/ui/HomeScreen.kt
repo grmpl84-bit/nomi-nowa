@@ -201,8 +201,14 @@ fun HomeScreen(onAddReminder: () -> Unit, onOpenSettings: () -> Unit, onOpenHist
         contract = androidx.activity.result.contract.ActivityResultContracts.TakePicture()
     ) { success ->
         if (success && tempCameraUriString != null && photoReminderId > 0) {
+            // Capture values now — tempCameraUriString/photoReminderId get reset
+            // below, and scope.launch only SCHEDULES the coroutine, it doesn't
+            // run synchronously. Reading the mutable state again inside the
+            // coroutine body would read the already-reset (null) value.
+            val savedUri = tempCameraUriString!!
+            val savedReminderId = photoReminderId
             scope.launch {
-                dao.updatePhoto(photoReminderId, tempCameraUriString!!)
+                dao.updatePhoto(savedReminderId, savedUri)
             }
         }
         photoReminderId = -1L
@@ -226,6 +232,8 @@ fun HomeScreen(onAddReminder: () -> Unit, onOpenSettings: () -> Unit, onOpenHist
         contract = androidx.activity.result.contract.ActivityResultContracts.OpenDocument()
     ) { uri ->
         if (uri != null && photoReminderId > 0) {
+            // Same capture-before-reset fix as cameraLauncher above
+            val savedReminderId = photoReminderId
             // Take persistable permission so we can read it later
             try {
                 context.contentResolver.takePersistableUriPermission(
@@ -233,7 +241,7 @@ fun HomeScreen(onAddReminder: () -> Unit, onOpenSettings: () -> Unit, onOpenHist
                 )
             } catch (_: Exception) {}
             scope.launch {
-                dao.updatePhoto(photoReminderId, uri.toString())
+                dao.updatePhoto(savedReminderId, uri.toString())
             }
         }
         photoReminderId = -1L
@@ -342,10 +350,14 @@ fun HomeScreen(onAddReminder: () -> Unit, onOpenSettings: () -> Unit, onOpenHist
                         FilledTonalButton(
                             onClick = {
                                 val newTime = System.currentTimeMillis() + min * 60_000L
+                                // Capture now — if the user reopens this dialog for a
+                                // DIFFERENT reminder before this coroutine runs,
+                                // snoozeReminder would already point elsewhere.
+                                val target = snoozeReminder!!
                                 scope.launch {
-                                    dao.snooze(snoozeReminder!!.id, newTime)
-                                    ReminderAlarmScheduler.cancel(context, snoozeReminder!!.id)
-                                    ReminderAlarmScheduler.schedule(context, snoozeReminder!!.copy(triggerAt = newTime))
+                                    dao.snooze(target.id, newTime)
+                                    ReminderAlarmScheduler.cancel(context, target.id)
+                                    ReminderAlarmScheduler.schedule(context, target.copy(triggerAt = newTime))
                                 }
                                 showSnoozeDialog = false
                             },
@@ -514,10 +526,13 @@ fun HomeScreen(onAddReminder: () -> Unit, onOpenSettings: () -> Unit, onOpenHist
                             editMinutes > 0 -> System.currentTimeMillis() + editMinutes * 60_000L
                             else -> editReminder!!.triggerAt
                         }
+                        // Capture now — same reasoning as the snooze dialog above.
+                        val target = editReminder!!
+                        val newTitle = editTitle
                         scope.launch {
-                            dao.update(editReminder!!.id, editTitle, newTrigger)
-                            ReminderAlarmScheduler.cancel(context, editReminder!!.id)
-                            ReminderAlarmScheduler.schedule(context, editReminder!!.copy(title = editTitle, triggerAt = newTrigger))
+                            dao.update(target.id, newTitle, newTrigger)
+                            ReminderAlarmScheduler.cancel(context, target.id)
+                            ReminderAlarmScheduler.schedule(context, target.copy(title = newTitle, triggerAt = newTrigger))
                         }
                         showEditDialog = false
                     },
