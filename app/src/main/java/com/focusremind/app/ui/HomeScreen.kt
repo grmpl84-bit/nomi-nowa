@@ -15,6 +15,7 @@ import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.animation.core.*
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
@@ -35,7 +36,9 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -830,23 +833,35 @@ fun ReminderCard(reminder: Reminder, onComplete: () -> Unit, onEdit: () -> Unit,
 
     Card(
         Modifier.fillMaxWidth(),
-        colors = if (isOverdue) CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.4f))
-        else CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f)),
-        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp),
+        colors = if (isOverdue) CardDefaults.cardColors(containerColor = Color(0xFFFDECEA), contentColor = Color(0xFF1A1A2E))
+        else CardDefaults.cardColors(containerColor = Color.White, contentColor = Color(0xFF1A1A2E)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
         shape = RoundedCornerShape(16.dp)
     ) {
         Column(Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                // Color accent dot — brand gradient, red for overdue
-                Box(
-                    modifier = Modifier
-                        .size(10.dp)
-                        .clip(CircleShape)
-                        .background(
-                            if (isOverdue) SolidColor(MaterialTheme.colorScheme.error)
-                            else Brush.linearGradient(listOf(Color(0xFF9C27B0), Color(0xFF00BCD4)))
+                // Color accent dot + short dashed line — brand gradient, red for overdue
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Box(
+                        modifier = Modifier
+                            .size(10.dp)
+                            .clip(CircleShape)
+                            .background(
+                                if (isOverdue) SolidColor(Color(0xFFB4432F))
+                                else Brush.linearGradient(listOf(Color(0xFF9C27B0), Color(0xFF00BCD4)))
+                            )
+                    )
+                    Spacer(Modifier.height(3.dp))
+                    Canvas(modifier = Modifier.width(2.dp).height(18.dp)) {
+                        drawLine(
+                            color = Color(0xFFE3DEF5),
+                            start = Offset(size.width / 2, 0f),
+                            end = Offset(size.width / 2, size.height),
+                            strokeWidth = 3f,
+                            pathEffect = PathEffect.dashPathEffect(floatArrayOf(4f, 4f), 0f)
                         )
-                )
+                    }
+                }
                 Spacer(Modifier.width(10.dp))
                 Column(Modifier.weight(1f)) {
                     Text(reminder.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
@@ -855,7 +870,7 @@ fun ReminderCard(reminder: Reminder, onComplete: () -> Unit, onEdit: () -> Unit,
                         Text(
                             timeText,
                             style = MaterialTheme.typography.bodySmall,
-                            color = if (isOverdue) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
+                            color = if (isOverdue) Color(0xFFB4432F) else Color(0xFF8A8FA3)
                         )
                         if (reminder.recurrence != null) {
                             Spacer(Modifier.width(6.dp))
@@ -863,7 +878,7 @@ fun ReminderCard(reminder: Reminder, onComplete: () -> Unit, onEdit: () -> Unit,
                                 if (reminder.recurrence == "DAILY") "🔁 ${stringResource(R.string.recurrence_daily)}"
                                 else "🔁 ${stringResource(R.string.recurrence_weekly)}",
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.primary,
+                                color = Color(0xFF7C4DFF),
                                 fontWeight = FontWeight.Medium
                             )
                         }
