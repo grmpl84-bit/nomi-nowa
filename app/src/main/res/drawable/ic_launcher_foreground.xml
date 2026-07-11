@@ -12,14 +12,15 @@
         android:fillAlpha="0.15"
         android:pathData="M26,24h56c8.8,0 16,7.2 16,16v32c0,8.8 -7.2,16 -16,16h-10l-8,10l-8,-10h-30c-8.8,0 -16,-7.2 -16,-16v-32c0,-8.8 7.2,-16 16,-16z" />
 
-    <!-- Letter "n" - arch shape (like in the icon: a U-shape upside down / arch) -->
-    <!-- White border/glow around the arch -->
+    <!-- Letter "n" - arch shape, centered in the bubble (shifted 15 left from
+         original position, which overflowed the bubble's right edge) -->
+    <!-- White border/glow around the arch — thinner (was 9, now 7) -->
     <path
         android:fillColor="@android:color/transparent"
         android:strokeColor="#FFFFFF"
-        android:strokeWidth="9"
+        android:strokeWidth="7"
         android:strokeLineCap="round"
-        android:pathData="M36,72v-18c0,-14 10,-22 18,-22s18,8 18,22v18" />
+        android:pathData="M21,72v-18c0,-14 10,-22 18,-22s18,8 18,22v18" />
 
     <!-- Inner cutout to make it look like thick outlined "n" arch -->
     <path
@@ -27,27 +28,32 @@
         android:strokeColor="#FFFFFF"
         android:strokeWidth="3"
         android:strokeLineCap="round"
-        android:pathData="M36,72v-18c0,-14 10,-22 18,-22s18,8 18,22v18" />
+        android:pathData="M21,72v-18c0,-14 10,-22 18,-22s18,8 18,22v18" />
 
-    <!-- Sound wave bars (right side of n) -->
+    <!-- "Eye" — on the right leg (the "voice" side, near the sound bars) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M42.5,45 a3.5,3.5 0 1,0 7,0 a3.5,3.5 0 1,0 -7,0" />
+
+    <!-- Sound wave bars (right side of n), shifted 15 left to stay centered -->
     <!-- Bar 1 (short) -->
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M78,48h4v20h-4z" />
+        android:pathData="M63,48h4v20h-4z" />
 
     <!-- Bar 2 (medium) -->
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M85,44h4v28h-4z" />
+        android:pathData="M70,44h4v28h-4z" />
 
     <!-- Bar 3 (tall) -->
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M92,40h4v36h-4z" />
+        android:pathData="M77,40h4v36h-4z" />
 
     <!-- Bar 4 (medium) -->
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M99,46h3v24h-3z" />
+        android:pathData="M84,46h3v24h-3z" />
 
 </vector>
