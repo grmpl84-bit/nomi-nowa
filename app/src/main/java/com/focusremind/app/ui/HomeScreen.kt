@@ -730,7 +730,7 @@ fun HomeScreen(onAddReminder: () -> Unit, onOpenSettings: () -> Unit, onOpenHist
                         Image(
                             painter = painterResource(R.drawable.ic_nomi_symbol),
                             contentDescription = "Nomi",
-                            modifier = Modifier.size(36.dp)
+                            modifier = Modifier.size(76.dp)
                         )
                         Spacer(Modifier.height(2.dp))
                         Text(
