@@ -99,6 +99,7 @@ object ReminderNotificationBuilder {
      *
      * "Przypomnij mi o czymś"      -> "Przypominam o czymś"
      * "Przypomnij mi żeby X"       -> "Przypominam, żeby X"
+     * "Przypomnij mi żebym X"      -> "Przypominam, żebym X" (and żebyś/żebyśmy/żebyście)
      * "Zadzwoń do mamy" (no lead-in prefix spoken) -> "Przypominam: Zadzwoń do mamy"
      */
     fun buildNotificationText(title: String): String {
@@ -106,10 +107,12 @@ object ReminderNotificationBuilder {
         cleanTitle = cleanTitle.replace(Regex("^przypomnij\\s*(mi\\s*)?", RegexOption.IGNORE_CASE), "")
         cleanTitle = cleanTitle.replace(Regex("^przypomnienie\\s*", RegexOption.IGNORE_CASE), "")
         cleanTitle = cleanTitle.trim()
+        // Matches all personal conjugations: żeby, żebym, żebyś, żebyśmy, żebyście
+        // (and the unaccented "zeby..." variants some speech recognizers produce)
+        val zebyForm = Regex("^[żz]eby(m|ś|śmy|ście)?\\s", RegexOption.IGNORE_CASE)
         return when {
             cleanTitle.startsWith("o ", ignoreCase = true) -> "Przypominam $cleanTitle"
-            cleanTitle.startsWith("żeby ", ignoreCase = true) || cleanTitle.startsWith("zeby ", ignoreCase = true) ->
-                "Przypominam, $cleanTitle"
+            zebyForm.containsMatchIn(cleanTitle) -> "Przypominam, $cleanTitle"
             else -> "Przypominam: $cleanTitle"
         }
     }
