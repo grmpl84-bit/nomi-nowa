@@ -66,6 +66,9 @@
     <string name="take_photo">Tomar foto</string>
     <string name="from_gallery">Elegir de la galería</string>
     <string name="photo_attached">Foto adjunta</string>
+    <string name="delete_photo_title">¿Eliminar la foto?</string>
+    <string name="delete_photo_message">Se eliminará la foto, el recordatorio en sí no cambiará.</string>
+    <string name="delete_photo_confirm">Eliminar foto</string>
     <string name="recurrence_none">Una vez</string>
     <string name="recurrence_daily">Diariamente</string>
     <string name="recurrence_weekly">Semanalmente</string>

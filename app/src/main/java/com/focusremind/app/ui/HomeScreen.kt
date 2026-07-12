@@ -16,8 +16,12 @@ import android.speech.SpeechRecognizer
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.rememberTransformableState
+import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -38,11 +42,15 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.layout.ContentScale
 import coil.compose.AsyncImage
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -192,6 +200,7 @@ fun HomeScreen(onAddReminder: () -> Unit, onOpenSettings: () -> Unit, onOpenHist
     // Photo picker state - use rememberSaveable to survive process death
     var photoReminderId by rememberSaveable { mutableStateOf(-1L) }
     var photoReminder by remember { mutableStateOf<Reminder?>(null) }
+    var fullScreenPhotoReminder by remember { mutableStateOf<Reminder?>(null) }
     var showPhotoOptions by remember { mutableStateOf(false) }
 
     // Camera photo URI - persisted across process death
@@ -439,6 +448,82 @@ fun HomeScreen(onAddReminder: () -> Unit, onOpenSettings: () -> Unit, onOpenHist
         )
     }
 
+    // Full-screen photo preview (tap thumbnail on a reminder card)
+    if (fullScreenPhotoReminder != null) {
+        val target = fullScreenPhotoReminder!!
+        Dialog(
+            onDismissRequest = { fullScreenPhotoReminder = null },
+            properties = DialogProperties(usePlatformDefaultWidth = false)
+        ) {
+            var scale by remember { mutableStateOf(1f) }
+            var offsetX by remember { mutableStateOf(0f) }
+            var offsetY by remember { mutableStateOf(0f) }
+            val transformState = rememberTransformableState { zoomChange, panChange, _ ->
+                scale = (scale * zoomChange).coerceIn(1f, 5f)
+                offsetX += panChange.x
+                offsetY += panChange.y
+            }
+            var showDeleteConfirm by remember { mutableStateOf(false) }
+
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .background(Color.Black)
+            ) {
+                AsyncImage(
+                    model = target.photoUri,
+                    contentDescription = stringResource(R.string.photo_attached),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .graphicsLayer(
+                            scaleX = scale, scaleY = scale,
+                            translationX = offsetX, translationY = offsetY
+                        )
+                        .transformable(transformState),
+                    contentScale = ContentScale.Fit
+                )
+
+                // Close button
+                IconButton(
+                    onClick = { fullScreenPhotoReminder = null },
+                    modifier = Modifier.align(Alignment.TopStart).padding(12.dp)
+                ) {
+                    Icon(Icons.Default.Close, null, tint = Color.White)
+                }
+
+                // Delete photo button (only removes the photo, not the reminder)
+                IconButton(
+                    onClick = { showDeleteConfirm = true },
+                    modifier = Modifier.align(Alignment.TopEnd).padding(12.dp)
+                ) {
+                    Icon(Icons.Default.Delete, null, tint = Color.White)
+                }
+            }
+
+            if (showDeleteConfirm) {
+                AlertDialog(
+                    onDismissRequest = { showDeleteConfirm = false },
+                    title = { Text(stringResource(R.string.delete_photo_title)) },
+                    text = { Text(stringResource(R.string.delete_photo_message)) },
+                    confirmButton = {
+                        Button(
+                            onClick = {
+                                val id = target.id
+                                scope.launch { dao.updatePhoto(id, null) }
+                                showDeleteConfirm = false
+                                fullScreenPhotoReminder = null
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                        ) { Text(stringResource(R.string.delete_photo_confirm)) }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showDeleteConfirm = false }) { Text(stringResource(R.string.cancel)) }
+                    }
+                )
+            }
+        }
+    }
+
     // Edit dialog
     if (showEditDialog && editReminder != null) {
         AlertDialog(
@@ -641,7 +726,12 @@ fun HomeScreen(onAddReminder: () -> Unit, onOpenSettings: () -> Unit, onOpenHist
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(Modifier.weight(1f)) {
-                        Text("nomi", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 20.sp)
+                        Image(
+                            painter = painterResource(R.drawable.ic_nomi_symbol),
+                            contentDescription = "Nomi",
+                            modifier = Modifier.size(36.dp)
+                        )
+                        Spacer(Modifier.height(2.dp))
                         Text(
                             "Just Say It. We'll Remember.",
                             color = Color.White.copy(alpha = 0.85f),
@@ -823,7 +913,8 @@ fun HomeScreen(onAddReminder: () -> Unit, onOpenSettings: () -> Unit, onOpenHist
                                 context.getString(R.string.recurring_manage_hint),
                                 android.widget.Toast.LENGTH_SHORT
                             ).show()
-                        }
+                        },
+                        onOpenPhoto = { fullScreenPhotoReminder = reminder }
                     )
                 }
             }
@@ -833,7 +924,7 @@ fun HomeScreen(onAddReminder: () -> Unit, onOpenSettings: () -> Unit, onOpenHist
 }
 
 @Composable
-fun ReminderCard(reminder: Reminder, onComplete: () -> Unit, onEdit: () -> Unit, onSnooze: () -> Unit, onDelete: () -> Unit, onAddPhoto: () -> Unit, onLockedDeleteTap: () -> Unit) {
+fun ReminderCard(reminder: Reminder, onComplete: () -> Unit, onEdit: () -> Unit, onSnooze: () -> Unit, onDelete: () -> Unit, onAddPhoto: () -> Unit, onLockedDeleteTap: () -> Unit, onOpenPhoto: () -> Unit) {
     val overdueText = stringResource(R.string.overdue)
     val timeText = remember(reminder.triggerAt) {
         val diff = reminder.triggerAt - System.currentTimeMillis()
@@ -908,7 +999,7 @@ fun ReminderCard(reminder: Reminder, onComplete: () -> Unit, onEdit: () -> Unit,
                 Spacer(Modifier.height(8.dp))
                 var photoLoadFailed by remember(reminder.photoUri) { mutableStateOf(false) }
                 Card(
-                    Modifier.fillMaxWidth().height(140.dp),
+                    Modifier.fillMaxWidth().height(140.dp).clickable(onClick = onOpenPhoto),
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     if (photoLoadFailed) {

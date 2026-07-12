@@ -66,6 +66,9 @@
     <string name="take_photo">Prendre une photo</string>
     <string name="from_gallery">Choisir dans la galerie</string>
     <string name="photo_attached">Photo jointe</string>
+    <string name="delete_photo_title">Supprimer la photo ?</string>
+    <string name="delete_photo_message">La photo sera supprimée, le rappel lui-même reste inchangé.</string>
+    <string name="delete_photo_confirm">Supprimer la photo</string>
     <string name="recurrence_none">Une fois</string>
     <string name="recurrence_daily">Quotidien</string>
     <string name="recurrence_weekly">Hebdomadaire</string>

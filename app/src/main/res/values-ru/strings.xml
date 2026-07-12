@@ -66,6 +66,9 @@
     <string name="take_photo">Сделать фото</string>
     <string name="from_gallery">Выбрать из галереи</string>
     <string name="photo_attached">Фото прикреплено</string>
+    <string name="delete_photo_title">Удалить фото?</string>
+    <string name="delete_photo_message">Фото будет удалено, само напоминание останется без изменений.</string>
+    <string name="delete_photo_confirm">Удалить фото</string>
     <string name="recurrence_none">Разово</string>
     <string name="recurrence_daily">Ежедневно</string>
     <string name="recurrence_weekly">Еженедельно</string>

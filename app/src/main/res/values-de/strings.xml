@@ -66,6 +66,9 @@
     <string name="take_photo">Foto aufnehmen</string>
     <string name="from_gallery">Aus Galerie wählen</string>
     <string name="photo_attached">Foto angehängt</string>
+    <string name="delete_photo_title">Foto löschen?</string>
+    <string name="delete_photo_message">Das Foto wird entfernt, die Erinnerung selbst bleibt unverändert.</string>
+    <string name="delete_photo_confirm">Foto löschen</string>
     <string name="recurrence_none">Einmalig</string>
     <string name="recurrence_daily">Täglich</string>
     <string name="recurrence_weekly">Wöchentlich</string>

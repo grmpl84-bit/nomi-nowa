@@ -66,6 +66,9 @@
     <string name="take_photo">Take photo</string>
     <string name="from_gallery">Choose from gallery</string>
     <string name="photo_attached">Photo attached</string>
+    <string name="delete_photo_title">Delete photo?</string>
+    <string name="delete_photo_message">The photo will be removed, the reminder itself stays unchanged.</string>
+    <string name="delete_photo_confirm">Delete photo</string>
     <string name="recurrence_none">One-time</string>
     <string name="recurrence_daily">Daily</string>
     <string name="recurrence_weekly">Weekly</string>
