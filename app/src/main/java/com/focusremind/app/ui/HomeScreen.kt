@@ -38,6 +38,8 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.layout.ContentScale
+import coil.compose.AsyncImage
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
@@ -904,12 +906,27 @@ fun ReminderCard(reminder: Reminder, onComplete: () -> Unit, onEdit: () -> Unit,
             // Show photo if attached
             if (!reminder.photoUri.isNullOrEmpty()) {
                 Spacer(Modifier.height(8.dp))
+                var photoLoadFailed by remember(reminder.photoUri) { mutableStateOf(false) }
                 Card(
-                    Modifier.fillMaxWidth().height(120.dp),
-                    shape = RoundedCornerShape(8.dp)
+                    Modifier.fillMaxWidth().height(140.dp),
+                    shape = RoundedCornerShape(12.dp)
                 ) {
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("\uD83D\uDCF7 ${stringResource(R.string.photo_attached)}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
+                    if (photoLoadFailed) {
+                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            Text(
+                                "⚠️ Nie udało się wczytać zdjęcia",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
+                    } else {
+                        AsyncImage(
+                            model = reminder.photoUri,
+                            contentDescription = stringResource(R.string.photo_attached),
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop,
+                            onError = { photoLoadFailed = true }
+                        )
                     }
                 }
             }
