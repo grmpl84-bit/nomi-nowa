@@ -100,7 +100,7 @@ fun SettingsScreen(onBack: () -> Unit, onOpenSoundPicker: () -> Unit, onShowOnbo
                         Icon(Icons.Default.Info, null, tint = MaterialTheme.colorScheme.primary)
                         Spacer(Modifier.width(16.dp))
                         Column {
-                            Text("Nomi v1.1.0", style = MaterialTheme.typography.titleSmall)
+                            Text("Nomi v${com.focusremind.app.BuildConfig.VERSION_NAME}", style = MaterialTheme.typography.titleSmall)
                             Text(stringResource(R.string.made_for), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
