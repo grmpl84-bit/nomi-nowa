@@ -293,6 +293,66 @@ object TimeParser {
      * Extract both hour AND minute from a time string.
      * Handles: "17:30", "17.30", "17h30" (French), "17 30", "5pm", "5:30am", bare "17".
      */
+    /**
+     * Same as extractTime, but also returns the EXACT substring that was
+     * consumed to produce the hour/minute — so callers can strip precisely
+     * that much, instead of independently guessing "1 or 2 words", which
+     * previously caused unrelated words (e.g. a second "o") to be eaten
+     * along with the time (see: "jutro o 15 o Romanie" bug).
+     */
+    private fun extractTimeWithMatch(text: String): Triple<Int, Int, String>? {
+        Regex("""(\d{1,2})(?::(\d{2}))?\s*(am|pm)""").find(text)?.let {
+            var h = it.groupValues[1].toInt()
+            val m = it.groupValues[2].toIntOrNull() ?: 0
+            val ampm = it.groupValues[3]
+            if (ampm == "pm" && h < 12) h += 12
+            if (ampm == "am" && h == 12) h = 0
+            if (h in 0..23 && m in 0..59) return Triple(h, m, it.value)
+        }
+        Regex("""(\d{1,2})h(\d{2})""").find(text)?.let {
+            val h = it.groupValues[1].toInt()
+            val m = it.groupValues[2].toInt()
+            if (h in 0..23 && m in 0..59) return Triple(h, m, it.value)
+        }
+        Regex("""(\d{1,2})h\b""").find(text)?.let {
+            val h = it.groupValues[1].toInt()
+            if (h in 0..23) return Triple(h, 0, it.value)
+        }
+        Regex("""(\d{1,2})[:\.](\d{2})""").find(text)?.let {
+            val h = it.groupValues[1].toInt()
+            val m = it.groupValues[2].toInt()
+            if (h in 0..23 && m in 0..59) return Triple(h, m, it.value)
+        }
+        Regex("""(\d{1,2})\s+(\d{2})\b""").find(text)?.let {
+            val h = it.groupValues[1].toInt()
+            val m = it.groupValues[2].toInt()
+            if (h in 0..23 && m in 0..59) return Triple(h, m, it.value)
+        }
+        // Polish ordinal hours: "dwudziestej", "ósmej" etc. — only extend the
+        // consumed match to include a second word if that word is ACTUALLY
+        // a valid minute (digits 0-59, or a known number word) — never just
+        // grab whatever word happens to follow.
+        for ((word, hour) in plOrdinalHours.entries.sortedByDescending { it.key.length }) {
+            if (text.contains(word)) {
+                val afterOrdinal = text.substringAfter(word).trimStart()
+                val firstToken = afterOrdinal.substringBefore(" ").trimEnd('.', ',', '!', '?')
+                val minuteFromDigits = firstToken.toIntOrNull()?.takeIf { it in 0..59 }
+                val minuteFromWord = (plNumbers + enNumbers + deNumbers)[firstToken]?.takeIf { it in 1..59 }
+                val minute = minuteFromDigits ?: minuteFromWord ?: 0
+                val matched = if (minute != 0) "$word $firstToken" else word
+                return Triple(hour, minute, matched)
+            }
+        }
+        Regex("""(\d{1,2})""").find(text)?.let {
+            val h = it.groupValues[1].toInt()
+            if (h in 0..23) return Triple(h, 0, it.value)
+        }
+        for ((word, num) in plNumbers + enNumbers + deNumbers) {
+            if (num in 1..23 && text.contains(word)) return Triple(num, 0, word)
+        }
+        return null
+    }
+
     private fun extractTime(text: String): Pair<Int, Int>? {
         // AM/PM: "5:30pm", "5pm", "5:30am", "5am"
         Regex("""(\d{1,2})(?::(\d{2}))?\s*(am|pm)""").find(text)?.let {
@@ -412,12 +472,21 @@ object TimeParser {
                 val afterDay = text.substringAfter(dayName)
                 var hour = 9
                 var minute = 0
+                var toStrip: String? = null
                 timePrefix.find(afterDay)?.let { m ->
-                    extractTime(m.groupValues[1])?.let { (h, min) -> hour = h; minute = min }
+                    extractTimeWithMatch(m.groupValues[1])?.let { (h, min, matchedTime) ->
+                        hour = h; minute = min
+                        // Only strip the trigger word + the EXACT time text that
+                        // was actually used — not the whole (possibly wider)
+                        // regex match, which could swallow unrelated words.
+                        val triggerPrefix = m.value.removeSuffix(m.groupValues[1])
+                        toStrip = triggerPrefix + matchedTime
+                    }
                 }
                 val cal = getNextDayOfWeek(dayOfWeek, hour, minute)
-                val cleaned = text.replace(dayName, "")
-                    .replace(timePrefix, "").trim()
+                var cleaned = text.replace(dayName, "")
+                toStrip?.let { cleaned = cleaned.replace(it, "") }
+                cleaned = cleaned.trim()
                 return Result(cal.timeInMillis, cleaned)
             }
         }
@@ -443,12 +512,17 @@ object TimeParser {
             if (day != null && day in 1..31) {
                 var hour = 9; var minute = 0
                 val afterMonth = text.substringAfter(monthWord)
-                Regex("""o\s+((?:\S+\s+){0,1}\S+)""").find(afterMonth)?.let { m ->
-                    extractTime(m.groupValues[1])?.let { (h, min) -> hour = h; minute = min }
+                var toStrip: String? = null
+                Regex("""o\s+(.+)""").find(afterMonth)?.let { m ->
+                    extractTimeWithMatch(m.groupValues[1])?.let { (h, min, matchedTime) ->
+                        hour = h; minute = min
+                        toStrip = "o $matchedTime"
+                    }
                 }
                 val cal = calendarForDate(month, day, hour, minute)
-                val cleaned = text.replace(Regex("""\d+\s*$monthWord"""), "")
-                    .replace(Regex("""o\s+(?:\S+\s+){0,1}\S+"""), "").replace(monthWord, "").trim()
+                var cleaned = text.replace(Regex("""\d+\s*$monthWord"""), "")
+                toStrip?.let { cleaned = cleaned.replace(it, "") }
+                cleaned = cleaned.replace(monthWord, "").trim()
                 return Result(cal.timeInMillis, cleaned)
             }
         }
@@ -536,11 +610,15 @@ object TimeParser {
             if (num != null && num > 0) return Result(System.currentTimeMillis() + num * 1000L, text.replace(it.value, "").trim())
         }
 
-        // "jutro o 17:30"
-        Regex("""jutro\s+o\s+((?:\S+\s+){0,1}\S+)""").find(text)?.let {
-            extractTime(it.groupValues[1])?.let { (h, m) ->
+        // "jutro o 17:30" — capture generously (up to end of a reasonable
+        // window), then let extractTimeWithMatch report EXACTLY what it used,
+        // so unrelated words after the time (e.g. "jutro o 15 o Romanie")
+        // are never swallowed along with it.
+        Regex("""jutro\s+o\s+(.+)""").find(text)?.let { outer ->
+            extractTimeWithMatch(outer.groupValues[1])?.let { (h, m, matchedTime) ->
                 val cal = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, 1); set(Calendar.HOUR_OF_DAY, h); set(Calendar.MINUTE, m); set(Calendar.SECOND, 0) }
-                return Result(cal.timeInMillis, text.replace(it.value, "").trim())
+                val toStrip = "jutro o " + matchedTime
+                return Result(cal.timeInMillis, text.replace(toStrip, "").trim())
             }
         }
         // "jutro rano" / "jutro po południu" / "jutro wieczorem" / "jutro w nocy"
