@@ -51,6 +51,32 @@ object TimeParser {
         "dwudziestej drugiej" to 22, "dwudziestej trzeciej" to 23
     )
 
+    // Nominative form ("ósma", not "ósmej") — used after "za kwadrans", e.g.
+    // "za kwadrans ósma" = 7:45. Different grammatical case than plOrdinalHours,
+    // which is why it's a separate map.
+    private val plNominativeHours = mapOf(
+        "pierwsza" to 1, "druga" to 2, "trzecia" to 3, "czwarta" to 4,
+        "piąta" to 5, "piata" to 5, "szósta" to 6, "szosta" to 6,
+        "siódma" to 7, "siodma" to 7, "ósma" to 8, "osma" to 8,
+        "dziewiąta" to 9, "dziewiata" to 9, "dziesiąta" to 10, "dziesiata" to 10,
+        "jedenasta" to 11, "dwunasta" to 12, "trzynasta" to 13,
+        "czternasta" to 14, "piętnasta" to 15, "pietnasta" to 15,
+        "szesnasta" to 16, "siedemnasta" to 17, "osiemnasta" to 18,
+        "dziewiętnasta" to 19, "dziewietnasta" to 19,
+        "dwudziesta" to 20, "dwudziesta pierwsza" to 21,
+        "dwudziesta druga" to 22, "dwudziesta trzecia" to 23
+    )
+
+    // Approximate anchor hours for parts of the day, used standalone or after
+    // "jutro"/"dziś" (e.g. "jutro rano", "dziś wieczorem", or just "wieczorem").
+    private val plDayParts = mapOf(
+        "rano" to 8,
+        "przed południem" to 10, "przed poludniem" to 10,
+        "po południu" to 15, "po poludniu" to 15, "popołudniu" to 15, "popoludniu" to 15,
+        "wieczorem" to 19,
+        "w nocy" to 22, "nocą" to 22, "noca" to 22
+    )
+
     private val plMonths = mapOf(
         "stycznia" to 1, "styczeń" to 1, "styczen" to 1,
         "lutego" to 2, "luty" to 2,
@@ -341,14 +367,23 @@ object TimeParser {
         return null
     }
 
-    private fun getNextDayOfWeek(dayOfWeek: Int): Calendar {
+    private fun getNextDayOfWeek(dayOfWeek: Int, hour: Int = 9, minute: Int = 0): Calendar {
         val cal = Calendar.getInstance()
         val today = cal.get(Calendar.DAY_OF_WEEK)
         var daysAhead = dayOfWeek - today
-        if (daysAhead <= 0) daysAhead += 7
+        if (daysAhead < 0) daysAhead += 7
+        // If it's the SAME weekday (daysAhead == 0) — e.g. saying "on Friday"
+        // ON a Friday — that colloquially means "later today", not "next week",
+        // as long as the target time hasn't already passed today.
+        if (daysAhead == 0) {
+            val candidate = Calendar.getInstance().apply {
+                set(Calendar.HOUR_OF_DAY, hour); set(Calendar.MINUTE, minute); set(Calendar.SECOND, 0)
+            }
+            if (candidate.timeInMillis <= System.currentTimeMillis()) daysAhead = 7
+        }
         cal.add(Calendar.DAY_OF_YEAR, daysAhead)
-        cal.set(Calendar.HOUR_OF_DAY, 9)
-        cal.set(Calendar.MINUTE, 0)
+        cal.set(Calendar.HOUR_OF_DAY, hour)
+        cal.set(Calendar.MINUTE, minute)
         cal.set(Calendar.SECOND, 0)
         return cal
     }
@@ -366,13 +401,6 @@ object TimeParser {
     }
 
     /** Apply time from "o/at/à/alle/в X:XX" substring to a Calendar. */
-    private fun applyTimeFromText(cal: Calendar, timeText: String) {
-        extractTime(timeText)?.let { (h, m) ->
-            cal.set(Calendar.HOUR_OF_DAY, h)
-            cal.set(Calendar.MINUTE, m)
-        }
-    }
-
     /** Handle day-of-week + optional time pattern for any language. */
     private fun parseDayOfWeek(
         text: String,
@@ -381,9 +409,13 @@ object TimeParser {
     ): Result? {
         for ((dayName, dayOfWeek) in daysMap.entries.sortedByDescending { it.key.length }) {
             if (text.contains(dayName)) {
-                val cal = getNextDayOfWeek(dayOfWeek)
                 val afterDay = text.substringAfter(dayName)
-                timePrefix.find(afterDay)?.let { applyTimeFromText(cal, it.groupValues[1]) }
+                var hour = 9
+                var minute = 0
+                timePrefix.find(afterDay)?.let { m ->
+                    extractTime(m.groupValues[1])?.let { (h, min) -> hour = h; minute = min }
+                }
+                val cal = getNextDayOfWeek(dayOfWeek, hour, minute)
                 val cleaned = text.replace(dayName, "")
                     .replace(timePrefix, "").trim()
                 return Result(cal.timeInMillis, cleaned)
@@ -435,6 +467,42 @@ object TimeParser {
         if (text.contains("za pół godziny") || text.contains("za pol godziny")) {
             return Result(System.currentTimeMillis() + 30 * 60_000L, text.replace(Regex("za p[oó]ł godziny"), "").trim())
         }
+        // "za kwadrans ósma" = 7:45 (quarter TO eight) — an ABSOLUTE time, not
+        // "in 15 minutes"! Must check before the generic "za kwadrans" below,
+        // since both start with the same words but mean very different things.
+        for ((word, hour) in plNominativeHours.entries.sortedByDescending { it.key.length }) {
+            if (text.contains("za kwadrans $word")) {
+                val cal = Calendar.getInstance().apply {
+                    set(Calendar.HOUR_OF_DAY, (hour - 1 + 24) % 24); set(Calendar.MINUTE, 45); set(Calendar.SECOND, 0)
+                    if (timeInMillis <= System.currentTimeMillis()) add(Calendar.DAY_OF_YEAR, 1)
+                }
+                return Result(cal.timeInMillis, text.replace("za kwadrans $word", "").trim())
+            }
+        }
+
+        // "kwadrans po siódmej" = 7:15 (quarter PAST seven)
+        for ((word, hour) in plOrdinalHours.entries.sortedByDescending { it.key.length }) {
+            if (text.contains("kwadrans po $word")) {
+                val cal = Calendar.getInstance().apply {
+                    set(Calendar.HOUR_OF_DAY, hour); set(Calendar.MINUTE, 15); set(Calendar.SECOND, 0)
+                    if (timeInMillis <= System.currentTimeMillis()) add(Calendar.DAY_OF_YEAR, 1)
+                }
+                return Result(cal.timeInMillis, text.replace("kwadrans po $word", "").trim())
+            }
+        }
+
+        // "wpół do szóstej" = 5:30 (half TO six — Polish counts the hour you're
+        // heading TOWARDS, opposite of English "half past five")
+        for ((word, hour) in plOrdinalHours.entries.sortedByDescending { it.key.length }) {
+            if (text.contains("wpół do $word") || text.contains("wpol do $word")) {
+                val cal = Calendar.getInstance().apply {
+                    set(Calendar.HOUR_OF_DAY, (hour - 1 + 24) % 24); set(Calendar.MINUTE, 30); set(Calendar.SECOND, 0)
+                    if (timeInMillis <= System.currentTimeMillis()) add(Calendar.DAY_OF_YEAR, 1)
+                }
+                return Result(cal.timeInMillis, text.replace(Regex("wp[oó]ł do $word"), "").trim())
+            }
+        }
+
         if (text.contains("za kwadrans")) {
             return Result(System.currentTimeMillis() + 15 * 60_000L, text.replace("za kwadrans", "").trim())
         }
@@ -452,6 +520,17 @@ object TimeParser {
                 return Result(cal.timeInMillis, text.replace(it.value, "").trim())
             }
         }
+        if (text.contains("za tydzień") || text.contains("za tydzien")) {
+            val cal = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, 7); set(Calendar.HOUR_OF_DAY, 9); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0) }
+            return Result(cal.timeInMillis, text.replace(Regex("za tydzie[nń]"), "").trim())
+        }
+        Regex("""za\s+(.+?)\s*tygodni[e]?""").find(text)?.let {
+            val num = extractNumber(it.groupValues[1])
+            if (num != null && num > 0) {
+                val cal = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, num * 7); set(Calendar.HOUR_OF_DAY, 9); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0) }
+                return Result(cal.timeInMillis, text.replace(it.value, "").trim())
+            }
+        }
         Regex("""za\s+(.+?)\s*sekund""").find(text)?.let {
             val num = extractNumber(it.groupValues[1])
             if (num != null && num > 0) return Result(System.currentTimeMillis() + num * 1000L, text.replace(it.value, "").trim())
@@ -464,6 +543,17 @@ object TimeParser {
                 return Result(cal.timeInMillis, text.replace(it.value, "").trim())
             }
         }
+        // "jutro rano" / "jutro po południu" / "jutro wieczorem" / "jutro w nocy"
+        // Must come BEFORE the generic bare-"jutro" fallback below, otherwise
+        // that catches it first and loses the specific part-of-day.
+        for ((part, hour) in plDayParts.entries.sortedByDescending { it.key.length }) {
+            if (text.contains("jutro $part")) {
+                val cal = Calendar.getInstance().apply {
+                    add(Calendar.DAY_OF_YEAR, 1); set(Calendar.HOUR_OF_DAY, hour); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0)
+                }
+                return Result(cal.timeInMillis, text.replace("jutro $part", "").trim())
+            }
+        }
         if (text.contains("jutro") && !text.contains(" o ")) {
             val cal = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, 1); set(Calendar.HOUR_OF_DAY, 9); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0) }
             return Result(cal.timeInMillis, text.replace("jutro", "").trim())
@@ -471,6 +561,30 @@ object TimeParser {
         if (text.contains("pojutrze")) {
             val cal = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, 2); set(Calendar.HOUR_OF_DAY, 9); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0) }
             return Result(cal.timeInMillis, text.replace("pojutrze", "").trim())
+        }
+
+        // "dziś wieczorem" / "dzisiaj rano" / etc. — explicit today + part of day
+        for ((part, hour) in plDayParts.entries.sortedByDescending { it.key.length }) {
+            if (text.contains("dziś $part") || text.contains("dzisiaj $part")) {
+                val trigger = if (text.contains("dzisiaj $part")) "dzisiaj $part" else "dziś $part"
+                val cal = Calendar.getInstance().apply {
+                    set(Calendar.HOUR_OF_DAY, hour); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0)
+                    if (timeInMillis <= System.currentTimeMillis()) add(Calendar.DAY_OF_YEAR, 1)
+                }
+                return Result(cal.timeInMillis, text.replace(trigger, "").trim())
+            }
+        }
+
+        // Bare part of day, no "jutro"/"dziś" — e.g. just "wieczorem zadzwoń do mamy".
+        // Defaults to today at the anchor hour, or tomorrow if that's already passed.
+        for ((part, hour) in plDayParts.entries.sortedByDescending { it.key.length }) {
+            if (text.contains(part)) {
+                val cal = Calendar.getInstance().apply {
+                    set(Calendar.HOUR_OF_DAY, hour); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0)
+                    if (timeInMillis <= System.currentTimeMillis()) add(Calendar.DAY_OF_YEAR, 1)
+                }
+                return Result(cal.timeInMillis, text.replace(part, "").trim())
+            }
         }
 
         // "o dwudziestej [trzydzieści]"
