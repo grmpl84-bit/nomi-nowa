@@ -20,6 +20,7 @@ import com.focusremind.app.FocusRemindApp
 import com.focusremind.app.R
 import com.focusremind.app.data.Reminder
 import com.focusremind.app.notification.ReminderAlarmScheduler
+import com.focusremind.app.notification.ReminderNotificationBuilder
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -199,7 +200,7 @@ private fun RecurringCard(reminder: Reminder, onDelete: () -> Unit, onChangeFreq
         elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp)
     ) {
         Column(Modifier.padding(16.dp)) {
-            Text(reminder.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+            Text(ReminderNotificationBuilder.buildNotificationText(reminder.title), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
             Spacer(Modifier.height(4.dp))
             Text(
                 "${stringResource(R.string.next_occurrence_label)} $timeFormatted",

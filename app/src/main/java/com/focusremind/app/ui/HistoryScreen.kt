@@ -14,6 +14,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.focusremind.app.FocusRemindApp
 import com.focusremind.app.data.Reminder
+import com.focusremind.app.notification.ReminderNotificationBuilder
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -118,7 +119,7 @@ private fun CompletedCard(reminder: Reminder) {
             )
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
-                Text(reminder.title, style = MaterialTheme.typography.bodyLarge)
+                Text(ReminderNotificationBuilder.buildNotificationText(reminder.title), style = MaterialTheme.typography.bodyLarge)
                 Text("Ukończono: $dateText", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }

@@ -92,15 +92,25 @@ object ReminderNotificationBuilder {
             .build()
     }
 
-    private fun buildNotificationText(title: String): String {
-        var cleanTitle = title
+    /**
+     * Turns the raw spoken/typed command into the "Przypominam ..." phrasing
+     * shown everywhere a reminder's title is displayed (notification, home
+     * list, recurring list, history) — not just in the notification.
+     *
+     * "Przypomnij mi o czymś"      -> "Przypominam o czymś"
+     * "Przypomnij mi żeby X"       -> "Przypominam, żeby X"
+     * "Zadzwoń do mamy" (no lead-in prefix spoken) -> "Przypominam: Zadzwoń do mamy"
+     */
+    fun buildNotificationText(title: String): String {
+        var cleanTitle = title.trim()
         cleanTitle = cleanTitle.replace(Regex("^przypomnij\\s*(mi\\s*)?", RegexOption.IGNORE_CASE), "")
         cleanTitle = cleanTitle.replace(Regex("^przypomnienie\\s*", RegexOption.IGNORE_CASE), "")
         cleanTitle = cleanTitle.trim()
-        return if (cleanTitle.startsWith("o ") || cleanTitle.startsWith("O ")) {
-            "Przypominam $cleanTitle"
-        } else {
-            "Przypominam: $cleanTitle"
+        return when {
+            cleanTitle.startsWith("o ", ignoreCase = true) -> "Przypominam $cleanTitle"
+            cleanTitle.startsWith("żeby ", ignoreCase = true) || cleanTitle.startsWith("zeby ", ignoreCase = true) ->
+                "Przypominam, $cleanTitle"
+            else -> "Przypominam: $cleanTitle"
         }
     }
 }

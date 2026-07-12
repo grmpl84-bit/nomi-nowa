@@ -60,6 +60,7 @@ import com.focusremind.app.FocusRemindApp
 import com.focusremind.app.R
 import com.focusremind.app.data.Reminder
 import com.focusremind.app.notification.ReminderAlarmScheduler
+import com.focusremind.app.notification.ReminderNotificationBuilder
 import com.focusremind.app.speech.TimeParser
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
@@ -972,7 +973,7 @@ fun ReminderCard(reminder: Reminder, onComplete: () -> Unit, onEdit: () -> Unit,
                 }
                 Spacer(Modifier.width(10.dp))
                 Column(Modifier.weight(1f)) {
-                    Text(reminder.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                    Text(ReminderNotificationBuilder.buildNotificationText(reminder.title), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                     Spacer(Modifier.height(2.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
