@@ -6,27 +6,31 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import java.util.concurrent.TimeUnit
+import java.util.Calendar
 
 // Beta-testing build only: reminders/alarms keep working normally even after
 // expiry (AlarmManager operates independently of the app UI) — this only
 // blocks opening the app UI itself, so testers know to grab a fresh build.
-private const val TRIAL_DURATION_DAYS = 30L
+//
+// Fixed calendar date (not "N days from install") — deliberately chosen so
+// reinstalling the app can't reset/extend the trial period, since testers
+// are expected to reinstall multiple times during testing.
+private fun trialExpiresAt(): Long = Calendar.getInstance().apply {
+    set(Calendar.YEAR, 2026)
+    set(Calendar.MONTH, Calendar.SEPTEMBER) // expires at the very start of September = end of August
+    set(Calendar.DAY_OF_MONTH, 1)
+    set(Calendar.HOUR_OF_DAY, 0)
+    set(Calendar.MINUTE, 0)
+    set(Calendar.SECOND, 0)
+    set(Calendar.MILLISECOND, 0)
+}.timeInMillis
 
 @Composable
 fun AppNavigation(startWithVoice: Boolean = false) {
     val context = LocalContext.current
     val prefs = remember { context.getSharedPreferences("nomi_prefs", Context.MODE_PRIVATE) }
 
-    val isExpired = remember {
-        var firstLaunchAt = prefs.getLong("first_launch_at", 0L)
-        if (firstLaunchAt == 0L) {
-            firstLaunchAt = System.currentTimeMillis()
-            prefs.edit().putLong("first_launch_at", firstLaunchAt).apply()
-        }
-        val trialDurationMs = TimeUnit.DAYS.toMillis(TRIAL_DURATION_DAYS)
-        System.currentTimeMillis() - firstLaunchAt > trialDurationMs
-    }
+    val isExpired = remember { System.currentTimeMillis() >= trialExpiresAt() }
 
     var showOnboarding by remember { mutableStateOf(!prefs.getBoolean("onboarding_done", false)) }
     // Skip splash when coming from widget (speed is key!)
