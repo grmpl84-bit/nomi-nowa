@@ -632,7 +632,14 @@ object TimeParser {
                 return Result(cal.timeInMillis, text.replace("jutro $part", "").trim())
             }
         }
-        if (text.contains("jutro") && !text.contains(" o ")) {
+        // Bare "jutro" (no specific time) — falls through to here only if the
+        // "jutro o <time>" pattern above already failed to find one, so it's
+        // safe to just check for the word alone now. (Previously this also
+        // required !text.contains(" o "), which incorrectly blocked this
+        // fallback whenever the reminder CONTENT happened to contain " o "
+        // for unrelated reasons — e.g. "jutro przypomnij mi o lekach" — the
+        // single most common Polish phrasing pattern.)
+        if (text.contains("jutro")) {
             val cal = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, 1); set(Calendar.HOUR_OF_DAY, 9); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0) }
             return Result(cal.timeInMillis, text.replace("jutro", "").trim())
         }
