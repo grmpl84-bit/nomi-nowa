@@ -42,11 +42,15 @@ class MainActivity : AppCompatActivity() {
         }
 
         val startVoice = intent?.getBooleanExtra("open_voice", false) ?: false
+        // Any tap on the home screen widget (mic circle OR the rest of it)
+        // should feel instant — skip the splash screen for both, not just
+        // the mic (which already skipped it via startVoice).
+        val fromWidget = intent?.getBooleanExtra("from_widget", false) ?: false
 
         setContent {
             FocusRemindTheme {
                 Surface(color = MaterialTheme.colorScheme.background) {
-                    AppNavigation(startWithVoice = startVoice)
+                    AppNavigation(startWithVoice = startVoice, skipSplash = fromWidget)
                 }
             }
         }
