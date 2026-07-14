@@ -10,6 +10,7 @@ import androidx.compose.animation.core.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Stop
@@ -47,6 +48,7 @@ fun VoiceScreen(onBack: () -> Unit) {
     var showReview by remember { mutableStateOf(false) }
     var selectedMinutes by remember { mutableIntStateOf(0) }
     var parsedResult by remember { mutableStateOf<TimeParser.Result?>(null) }
+    var customDateTime by remember { mutableStateOf<Long?>(null) }
 
     val recognizer = remember { SpeechRecognizer.createSpeechRecognizer(context) }
     DisposableEffect(Unit) { onDispose { recognizer.destroy() } }
@@ -56,6 +58,7 @@ fun VoiceScreen(onBack: () -> Unit) {
         recognizedText = ""
         parsedResult = null
         selectedMinutes = 0
+        customDateTime = null
         val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
             putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
             putExtra(RecognizerIntent.EXTRA_LANGUAGE, "pl-PL")
@@ -174,7 +177,7 @@ fun VoiceScreen(onBack: () -> Unit) {
                     listOf(5 to "5 min", 10 to "10 min", 15 to "15 min").forEach { (min, label) ->
                         FilterChip(
                             selected = selectedMinutes == min,
-                            onClick = { selectedMinutes = min; parsedResult = null },
+                            onClick = { selectedMinutes = min; parsedResult = null; customDateTime = null },
                             label = { Text(label) }
                         )
                     }
@@ -184,9 +187,59 @@ fun VoiceScreen(onBack: () -> Unit) {
                     listOf(30 to "30 min", 60 to "1h", 120 to "2h").forEach { (min, label) ->
                         FilterChip(
                             selected = selectedMinutes == min,
-                            onClick = { selectedMinutes = min; parsedResult = null },
+                            onClick = { selectedMinutes = min; parsedResult = null; customDateTime = null },
                             label = { Text(label) }
                         )
+                    }
+                }
+
+                Spacer(Modifier.height(12.dp))
+
+                // Manual date/time picker — fallback for anything the quick
+                // intervals above can't express (e.g. "tomorrow", a specific
+                // future date), in case voice recognition didn't catch a date.
+                if (customDateTime != null) {
+                    val customFormatted = remember(customDateTime) {
+                        SimpleDateFormat("EEEE, d MMM, HH:mm", Locale("pl")).format(Date(customDateTime!!))
+                    }
+                    Card(
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
+                    ) {
+                        Row(
+                            Modifier.padding(12.dp).fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text("📅", style = MaterialTheme.typography.titleMedium)
+                            Spacer(Modifier.width(8.dp))
+                            Column(Modifier.weight(1f)) {
+                                Text("Wybrano ręcznie:", style = MaterialTheme.typography.labelSmall)
+                                Text(customFormatted, style = MaterialTheme.typography.bodyLarge)
+                            }
+                            TextButton(onClick = { customDateTime = null }) { Text(stringResource(R.string.cancel)) }
+                        }
+                    }
+                    Spacer(Modifier.height(8.dp))
+                } else {
+                    OutlinedButton(
+                        onClick = {
+                            val cal = Calendar.getInstance()
+                            android.app.DatePickerDialog(context, { _, year, month, day ->
+                                android.app.TimePickerDialog(context, { _, hour, minute ->
+                                    val chosen = Calendar.getInstance().apply {
+                                        set(Calendar.YEAR, year); set(Calendar.MONTH, month); set(Calendar.DAY_OF_MONTH, day)
+                                        set(Calendar.HOUR_OF_DAY, hour); set(Calendar.MINUTE, minute); set(Calendar.SECOND, 0)
+                                    }
+                                    customDateTime = chosen.timeInMillis
+                                    selectedMinutes = 0
+                                    parsedResult = null
+                                }, cal.get(Calendar.HOUR_OF_DAY), cal.get(Calendar.MINUTE), true).show()
+                            }, cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH)).show()
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(Icons.Default.CalendarMonth, null, Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text("Wybierz datę i godzinę...")
                     }
                 }
 
@@ -199,6 +252,7 @@ fun VoiceScreen(onBack: () -> Unit) {
                     Button(
                         onClick = {
                             val triggerAt = when {
+                                customDateTime != null -> customDateTime!!
                                 selectedMinutes > 0 -> System.currentTimeMillis() + selectedMinutes * 60_000L
                                 parsedResult != null -> parsedResult!!.triggerAt
                                 else -> System.currentTimeMillis() + 15 * 60_000L
@@ -216,7 +270,7 @@ fun VoiceScreen(onBack: () -> Unit) {
                             }
                         },
                         modifier = Modifier.weight(1f),
-                        enabled = editableTitle.isNotBlank() && (selectedMinutes > 0 || parsedResult != null)
+                        enabled = editableTitle.isNotBlank() && (selectedMinutes > 0 || parsedResult != null || customDateTime != null)
                     ) { Text(stringResource(R.string.save)) }
                 }
             }
