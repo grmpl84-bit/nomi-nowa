@@ -51,9 +51,4 @@
         android:fillColor="#FFFFFF"
         android:pathData="M77,40h4v36h-4z" />
 
-    <!-- Bar 4 (medium) -->
-    <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M84,46h3v24h-3z" />
-
 </vector>
