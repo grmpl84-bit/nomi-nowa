@@ -157,6 +157,17 @@ class AlarmReceiver : BroadcastReceiver() {
     }
 
     private fun getSoundByIndex(context: Context, index: Int): Uri? {
+        if (index == -1) return null // silence
+        if (index == -2) {
+            // Custom user-picked sound (see SoundPickerScreen.CUSTOM_SOUND_INDEX)
+            val prefs = context.getSharedPreferences("focusremind_settings", Context.MODE_PRIVATE)
+            val uriString = prefs.getString("notification_sound_custom_uri", null)
+            return if (uriString != null) {
+                try { Uri.parse(uriString) } catch (_: Exception) { RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM) }
+            } else {
+                RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
+            }
+        }
         if (index < 0) return null
         return try {
             val rm = RingtoneManager(context)

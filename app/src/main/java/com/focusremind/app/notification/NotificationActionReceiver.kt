@@ -59,6 +59,15 @@ class NotificationActionReceiver : BroadcastReceiver() {
                             Log.d(TAG, "Reminder $reminderId snoozed +15 min")
                         }
                     }
+                    "SNOOZE_30" -> {
+                        val newTime = System.currentTimeMillis() + 30 * 60_000
+                        dao.snooze(reminderId, newTime)
+                        val reminder = dao.getById(reminderId)
+                        if (reminder != null) {
+                            ReminderAlarmScheduler.schedule(context, reminder.copy(triggerAt = newTime))
+                            Log.d(TAG, "Reminder $reminderId snoozed +30 min")
+                        }
+                    }
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Error handling action ${intent.action}", e)
