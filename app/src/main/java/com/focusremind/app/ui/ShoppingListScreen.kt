@@ -1,5 +1,6 @@
 package com.focusremind.app.ui
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -11,14 +12,25 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.focusremind.app.FocusRemindApp
 import com.focusremind.app.R
 import com.focusremind.app.data.ShoppingItem
 import kotlinx.coroutines.launch
+
+// Fixed brand colors — same philosophy as the reminder list cards: a
+// consistent, deliberate look regardless of the device's dynamic theme.
+private val InkColor = Color(0xFF1A1A2E)
+private val MutedColor = Color(0xFF8A8FA3)
+private val CartBg = Color(0xFFF0E6FF)      // soft lavender — clearly different from white
+private val CartTextColor = Color(0xFF7C4DFF)
+private val BrandGradient = Brush.linearGradient(listOf(Color(0xFF9C27B0), Color(0xFF7C4DFF), Color(0xFF00BCD4)))
 
 /**
  * Shopping list — deliberately separate from Reminder: no time/date involved
@@ -45,27 +57,27 @@ fun ShoppingListScreen(onBack: () -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Zakupy") },
+                title = { Text("Zakupy", fontSize = 22.sp, fontWeight = FontWeight.Bold) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, null) }
+                    IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, null, modifier = Modifier.size(28.dp)) }
                 }
             )
         },
         floatingActionButton = {
             FloatingActionButton(onClick = { newItemName = ""; showAddDialog = true }) {
-                Icon(Icons.Default.Add, null)
+                Icon(Icons.Default.Add, null, modifier = Modifier.size(28.dp))
             }
         }
     ) { padding ->
         if (toBuy.isEmpty() && inCart.isEmpty()) {
             Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                Text("Lista zakupów jest pusta", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("Lista zakupów jest pusta", fontSize = 18.sp, color = MutedColor)
             }
         } else {
             LazyColumn(
                 modifier = Modifier.padding(padding).fillMaxSize(),
                 contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 item {
                     Row(
@@ -74,13 +86,14 @@ fun ShoppingListScreen(onBack: () -> Unit) {
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            "Do kupienia",
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.Bold
+                            "🛒 Do kupienia",
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = InkColor
                         )
                         if (toBuy.isNotEmpty()) {
                             TextButton(onClick = { showClearToBuyConfirm = true }) {
-                                Text("Wyczyść listę zakupów")
+                                Text("Wyczyść listę", fontSize = 16.sp)
                             }
                         }
                     }
@@ -90,8 +103,8 @@ fun ShoppingListScreen(onBack: () -> Unit) {
                     item {
                         Text(
                             "Nic do kupienia 🎉",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontSize = 18.sp,
+                            color = MutedColor,
                             modifier = Modifier.padding(vertical = 8.dp)
                         )
                     }
@@ -101,40 +114,55 @@ fun ShoppingListScreen(onBack: () -> Unit) {
                             Modifier
                                 .fillMaxWidth()
                                 .clickable { scope.launch { dao.setInCart(shoppingItem.id, true) } },
-                            shape = RoundedCornerShape(12.dp)
+                            colors = CardDefaults.cardColors(containerColor = Color.White),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                            shape = RoundedCornerShape(14.dp)
                         ) {
-                            Row(
-                                Modifier.fillMaxWidth().padding(12.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    shoppingItem.name,
-                                    modifier = Modifier.weight(1f),
-                                    style = MaterialTheme.typography.bodyLarge
+                            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                // Brand-gradient accent stripe — the clearest, most
+                                // immediate visual difference from the cart cards.
+                                Box(
+                                    Modifier
+                                        .width(6.dp)
+                                        .height(64.dp)
+                                        .background(BrandGradient)
                                 )
-                                IconButton(onClick = {
-                                    editingItem = shoppingItem
-                                    editName = shoppingItem.name
-                                }) {
-                                    Icon(Icons.Default.Edit, "Edytuj", tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                                }
-                                IconButton(onClick = {
-                                    scope.launch { dao.delete(shoppingItem.id) }
-                                }) {
-                                    Icon(Icons.Default.Delete, "Usuń", tint = MaterialTheme.colorScheme.error)
+                                Row(
+                                    Modifier.fillMaxWidth().padding(14.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        shoppingItem.name,
+                                        modifier = Modifier.weight(1f),
+                                        fontSize = 20.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        color = InkColor
+                                    )
+                                    IconButton(onClick = {
+                                        editingItem = shoppingItem
+                                        editName = shoppingItem.name
+                                    }) {
+                                        Icon(Icons.Default.Edit, "Edytuj", modifier = Modifier.size(26.dp), tint = MutedColor)
+                                    }
+                                    IconButton(onClick = {
+                                        scope.launch { dao.delete(shoppingItem.id) }
+                                    }) {
+                                        Icon(Icons.Default.Delete, "Usuń", modifier = Modifier.size(26.dp), tint = Color(0xFFB4432F))
+                                    }
                                 }
                             }
                         }
                     }
                 }
 
-                item { Spacer(Modifier.height(8.dp)) }
+                item { Spacer(Modifier.height(10.dp)) }
 
                 item {
                     Text(
-                        "Koszyk",
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold
+                        "✅ Koszyk",
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = InkColor
                     )
                 }
 
@@ -142,8 +170,8 @@ fun ShoppingListScreen(onBack: () -> Unit) {
                     item {
                         Text(
                             "Koszyk jest pusty",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontSize = 18.sp,
+                            color = MutedColor,
                             modifier = Modifier.padding(vertical = 8.dp)
                         )
                     }
@@ -151,30 +179,31 @@ fun ShoppingListScreen(onBack: () -> Unit) {
                     items(inCart, key = { "cart_${it.id}" }) { shoppingItem ->
                         Card(
                             Modifier.fillMaxWidth(),
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                            shape = RoundedCornerShape(12.dp)
+                            colors = CardDefaults.cardColors(containerColor = CartBg),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                            shape = RoundedCornerShape(14.dp)
                         ) {
                             Row(
-                                Modifier.fillMaxWidth().padding(12.dp),
+                                Modifier.fillMaxWidth().padding(14.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 // Undo arrow — moves the item back to "Do kupienia"
                                 IconButton(onClick = {
                                     scope.launch { dao.setInCart(shoppingItem.id, false) }
                                 }) {
-                                    Icon(Icons.Default.ArrowBack, "Cofnij do listy", tint = MaterialTheme.colorScheme.primary)
+                                    Icon(Icons.Default.ArrowBack, "Cofnij do listy", modifier = Modifier.size(28.dp), tint = CartTextColor)
                                 }
                                 Text(
                                     shoppingItem.name,
                                     modifier = Modifier.weight(1f),
-                                    style = MaterialTheme.typography.bodyLarge,
+                                    fontSize = 20.sp,
                                     textDecoration = TextDecoration.LineThrough,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    color = CartTextColor.copy(alpha = 0.7f)
                                 )
                                 IconButton(onClick = {
                                     scope.launch { dao.delete(shoppingItem.id) }
                                 }) {
-                                    Icon(Icons.Default.Delete, "Usuń", tint = MaterialTheme.colorScheme.error)
+                                    Icon(Icons.Default.Delete, "Usuń", modifier = Modifier.size(26.dp), tint = Color(0xFFB4432F))
                                 }
                             }
                         }
@@ -188,7 +217,7 @@ fun ShoppingListScreen(onBack: () -> Unit) {
                         onClick = { showClearAllConfirm = true },
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("Wyczyść wszystko", color = MaterialTheme.colorScheme.error)
+                        Text("Wyczyść wszystko", fontSize = 18.sp, color = Color(0xFFB4432F))
                     }
                 }
             }
@@ -199,12 +228,13 @@ fun ShoppingListScreen(onBack: () -> Unit) {
     if (showAddDialog) {
         AlertDialog(
             onDismissRequest = { showAddDialog = false },
-            title = { Text("Nowy produkt") },
+            title = { Text("Nowy produkt", fontSize = 20.sp) },
             text = {
                 OutlinedTextField(
                     value = newItemName,
                     onValueChange = { newItemName = it },
-                    label = { Text("Nazwa produktu") },
+                    label = { Text("Nazwa produktu", fontSize = 16.sp) },
+                    textStyle = androidx.compose.ui.text.TextStyle(fontSize = 20.sp),
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
                 )
@@ -224,10 +254,10 @@ fun ShoppingListScreen(onBack: () -> Unit) {
                         showAddDialog = false
                     },
                     enabled = newItemName.isNotBlank()
-                ) { Text(stringResource(R.string.save)) }
+                ) { Text(stringResource(R.string.save), fontSize = 16.sp) }
             },
             dismissButton = {
-                TextButton(onClick = { showAddDialog = false }) { Text(stringResource(R.string.cancel)) }
+                TextButton(onClick = { showAddDialog = false }) { Text(stringResource(R.string.cancel), fontSize = 16.sp) }
             }
         )
     }
@@ -236,12 +266,13 @@ fun ShoppingListScreen(onBack: () -> Unit) {
     if (editingItem != null) {
         AlertDialog(
             onDismissRequest = { editingItem = null },
-            title = { Text("Edytuj produkt") },
+            title = { Text("Edytuj produkt", fontSize = 20.sp) },
             text = {
                 OutlinedTextField(
                     value = editName,
                     onValueChange = { editName = it },
-                    label = { Text("Nazwa produktu") },
+                    label = { Text("Nazwa produktu", fontSize = 16.sp) },
+                    textStyle = androidx.compose.ui.text.TextStyle(fontSize = 20.sp),
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
                 )
@@ -257,10 +288,10 @@ fun ShoppingListScreen(onBack: () -> Unit) {
                         editingItem = null
                     },
                     enabled = editName.isNotBlank()
-                ) { Text(stringResource(R.string.save)) }
+                ) { Text(stringResource(R.string.save), fontSize = 16.sp) }
             },
             dismissButton = {
-                TextButton(onClick = { editingItem = null }) { Text(stringResource(R.string.cancel)) }
+                TextButton(onClick = { editingItem = null }) { Text(stringResource(R.string.cancel), fontSize = 16.sp) }
             }
         )
     }
@@ -269,8 +300,8 @@ fun ShoppingListScreen(onBack: () -> Unit) {
     if (showClearToBuyConfirm) {
         AlertDialog(
             onDismissRequest = { showClearToBuyConfirm = false },
-            title = { Text("Wyczyścić listę zakupów?") },
-            text = { Text("Produkty w koszyku zostaną bez zmian.") },
+            title = { Text("Wyczyścić listę zakupów?", fontSize = 20.sp) },
+            text = { Text("Produkty w koszyku zostaną bez zmian.", fontSize = 16.sp) },
             confirmButton = {
                 Button(
                     onClick = {
@@ -278,10 +309,10 @@ fun ShoppingListScreen(onBack: () -> Unit) {
                         showClearToBuyConfirm = false
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
-                ) { Text("Wyczyść") }
+                ) { Text("Wyczyść", fontSize = 16.sp) }
             },
             dismissButton = {
-                TextButton(onClick = { showClearToBuyConfirm = false }) { Text(stringResource(R.string.cancel)) }
+                TextButton(onClick = { showClearToBuyConfirm = false }) { Text(stringResource(R.string.cancel), fontSize = 16.sp) }
             }
         )
     }
@@ -290,8 +321,8 @@ fun ShoppingListScreen(onBack: () -> Unit) {
     if (showClearAllConfirm) {
         AlertDialog(
             onDismissRequest = { showClearAllConfirm = false },
-            title = { Text("Wyczyścić wszystko?") },
-            text = { Text("Usunie zarówno listę zakupów, jak i zawartość koszyka.") },
+            title = { Text("Wyczyścić wszystko?", fontSize = 20.sp) },
+            text = { Text("Usunie zarówno listę zakupów, jak i zawartość koszyka.", fontSize = 16.sp) },
             confirmButton = {
                 Button(
                     onClick = {
@@ -299,10 +330,10 @@ fun ShoppingListScreen(onBack: () -> Unit) {
                         showClearAllConfirm = false
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
-                ) { Text("Wyczyść wszystko") }
+                ) { Text("Wyczyść wszystko", fontSize = 16.sp) }
             },
             dismissButton = {
-                TextButton(onClick = { showClearAllConfirm = false }) { Text(stringResource(R.string.cancel)) }
+                TextButton(onClick = { showClearAllConfirm = false }) { Text(stringResource(R.string.cancel), fontSize = 16.sp) }
             }
         )
     }
