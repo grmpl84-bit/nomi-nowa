@@ -28,8 +28,12 @@ fun AppNavigation(startWithVoice: Boolean = false, skipSplash: Boolean = false) 
                     onOpenSettings = { nav.navigate("settings") },
                     onOpenHistory = { nav.navigate("history") },
                     onOpenRecurring = { nav.navigate("recurring") },
+                    onOpenShopping = { nav.navigate("shopping") },
                     startRecordingImmediately = startWithVoice
                 )
+            }
+            composable("shopping") {
+                ShoppingListScreen(onBack = { nav.popBackStack() })
             }
             composable("recurring") {
                 RecurringScreen(onBack = { nav.popBackStack() })

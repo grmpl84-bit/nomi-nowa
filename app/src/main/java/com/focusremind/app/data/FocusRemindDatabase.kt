@@ -18,6 +18,14 @@ data class Reminder(
     val createdAt: Long = System.currentTimeMillis()
 )
 
+@Entity(tableName = "shopping_items")
+data class ShoppingItem(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val name: String,
+    val inCart: Boolean = false,
+    val addedAt: Long = System.currentTimeMillis()
+)
+
 @Dao
 interface ReminderDao {
     @Query("SELECT * FROM reminders WHERE isCompleted = 0 ORDER BY triggerAt ASC")
@@ -60,7 +68,38 @@ interface ReminderDao {
     suspend fun getById(id: Long): Reminder?
 }
 
-@Database(entities = [Reminder::class], version = 5)
+@Dao
+interface ShoppingDao {
+    @Query("SELECT * FROM shopping_items WHERE inCart = 0 ORDER BY addedAt ASC")
+    fun getToBuy(): Flow<List<ShoppingItem>>
+
+    @Query("SELECT * FROM shopping_items WHERE inCart = 1 ORDER BY addedAt ASC")
+    fun getInCart(): Flow<List<ShoppingItem>>
+
+    @Query("SELECT * FROM shopping_items WHERE LOWER(name) = LOWER(:name) LIMIT 1")
+    suspend fun findByName(name: String): ShoppingItem?
+
+    @Insert
+    suspend fun insert(item: ShoppingItem): Long
+
+    @Query("UPDATE shopping_items SET inCart = :inCart WHERE id = :id")
+    suspend fun setInCart(id: Long, inCart: Boolean)
+
+    @Query("UPDATE shopping_items SET name = :name WHERE id = :id")
+    suspend fun rename(id: Long, name: String)
+
+    @Query("DELETE FROM shopping_items WHERE id = :id")
+    suspend fun delete(id: Long)
+
+    @Query("DELETE FROM shopping_items WHERE inCart = 0")
+    suspend fun clearToBuy()
+
+    @Query("DELETE FROM shopping_items")
+    suspend fun clearAll()
+}
+
+@Database(entities = [Reminder::class, ShoppingItem::class], version = 6)
 abstract class FocusRemindDatabase : RoomDatabase() {
     abstract fun reminderDao(): ReminderDao
+    abstract fun shoppingDao(): ShoppingDao
 }

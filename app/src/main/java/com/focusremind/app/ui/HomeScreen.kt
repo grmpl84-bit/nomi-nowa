@@ -73,7 +73,7 @@ import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
 @Composable
-fun HomeScreen(onAddReminder: () -> Unit, onOpenSettings: () -> Unit, onOpenHistory: () -> Unit, onOpenRecurring: () -> Unit, startRecordingImmediately: Boolean = false) {
+fun HomeScreen(onAddReminder: () -> Unit, onOpenSettings: () -> Unit, onOpenHistory: () -> Unit, onOpenRecurring: () -> Unit, onOpenShopping: () -> Unit, startRecordingImmediately: Boolean = false) {
     val context = LocalContext.current
     val dao = FocusRemindApp.instance.database.reminderDao()
     val reminders by dao.getActive().collectAsState(initial = emptyList())
@@ -775,6 +775,12 @@ fun HomeScreen(onAddReminder: () -> Unit, onOpenSettings: () -> Unit, onOpenHist
                     onClick = onOpenRecurring,
                     icon = { Icon(Icons.Default.Repeat, null) },
                     label = { Text(stringResource(R.string.recurring_nav_label)) }
+                )
+                NavigationBarItem(
+                    selected = false,
+                    onClick = onOpenShopping,
+                    icon = { Icon(Icons.Default.ShoppingCart, null) },
+                    label = { Text("Zakupy") }
                 )
             }
         },
