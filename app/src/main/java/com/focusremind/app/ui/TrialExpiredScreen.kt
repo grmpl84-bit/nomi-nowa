@@ -44,15 +44,22 @@ fun TrialExpiredScreen() {
             )
             Spacer(Modifier.height(20.dp))
             Text(
-                "Ta wersja testowa wygasła",
+                "Okres testowy dobiegł końca",
                 color = Color.White,
                 fontWeight = FontWeight.Bold,
                 fontSize = MaterialTheme.typography.headlineSmall.fontSize,
                 textAlign = TextAlign.Center
             )
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(16.dp))
             Text(
-                "Okres testów tej wersji Nomi dobiegł końca. Poproś o nowszą wersję aplikacji, żeby kontynuować testy.",
+                "Dziękujemy, że byłeś/aś częścią testów Nomi! Twoja pomoc i uwagi naprawdę wiele znaczyły.",
+                color = Color.White.copy(alpha = 0.9f),
+                textAlign = TextAlign.Center,
+                style = MaterialTheme.typography.bodyMedium
+            )
+            Spacer(Modifier.height(16.dp))
+            Text(
+                "Jeśli chcesz nadal korzystać z aplikacji, napisz do administratora na Facebooku albo na grmpl@gmail.com.",
                 color = Color.White.copy(alpha = 0.9f),
                 textAlign = TextAlign.Center,
                 style = MaterialTheme.typography.bodyMedium
