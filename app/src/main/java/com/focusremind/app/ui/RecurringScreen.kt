@@ -63,9 +63,12 @@ fun RecurringScreen(onBack: () -> Unit) {
                         )
                     )
                     .windowInsetsPadding(WindowInsets.statusBars)
-                    .padding(horizontal = 12.dp, vertical = 14.dp)
+                    .height(110.dp)
             ) {
-                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     IconButton(onClick = onBack) {
                         Icon(Icons.Default.ArrowBack, null, tint = Color.White)
                     }
