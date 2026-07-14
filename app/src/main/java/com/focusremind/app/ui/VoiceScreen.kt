@@ -26,6 +26,7 @@ import com.focusremind.app.FocusRemindApp
 import com.focusremind.app.R
 import com.focusremind.app.data.Reminder
 import com.focusremind.app.notification.ReminderAlarmScheduler
+import com.focusremind.app.speech.ShoppingListParser
 import com.focusremind.app.speech.TimeParser
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
@@ -41,6 +42,7 @@ fun VoiceScreen(onBack: () -> Unit) {
     val micPermission = rememberPermissionState(Manifest.permission.RECORD_AUDIO)
     val scope = rememberCoroutineScope()
     val dao = FocusRemindApp.instance.database.reminderDao()
+    val shoppingDao = FocusRemindApp.instance.database.shoppingDao()
 
     var isListening by remember { mutableStateOf(false) }
     var recognizedText by remember { mutableStateOf("") }
@@ -68,6 +70,30 @@ fun VoiceScreen(onBack: () -> Unit) {
             override fun onResults(results: Bundle?) {
                 val text = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull() ?: ""
                 recognizedText = text
+                isListening = false
+
+                // Shopping list commands have no time/date at all — check
+                // for them FIRST, before TimeParser even runs, and skip the
+                // whole time-review screen entirely if matched.
+                val shoppingItemName = ShoppingListParser.parse(text)
+                if (shoppingItemName != null) {
+                    scope.launch {
+                        val existing = shoppingDao.findByName(shoppingItemName)
+                        if (existing != null) {
+                            android.widget.Toast.makeText(
+                                context, "$shoppingItemName jest już na liście", android.widget.Toast.LENGTH_SHORT
+                            ).show()
+                        } else {
+                            shoppingDao.insert(com.focusremind.app.data.ShoppingItem(name = shoppingItemName))
+                            android.widget.Toast.makeText(
+                                context, "Dodano: $shoppingItemName", android.widget.Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                        onBack()
+                    }
+                    return
+                }
+
                 // Try to parse time from speech
                 val parsed = TimeParser.parse(text)
                 parsedResult = parsed
@@ -76,7 +102,6 @@ fun VoiceScreen(onBack: () -> Unit) {
                 } else {
                     text.replaceFirstChar { it.uppercase() }
                 }
-                isListening = false
                 showReview = true
             }
             override fun onPartialResults(partial: Bundle?) {
