@@ -13,8 +13,8 @@ android {
         applicationId = "com.focusremind.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 17
-        versionName = "1.13.0-beta"
+        versionCode = 18
+        versionName = "1.14.0-beta"
     }
 
     buildTypes {
