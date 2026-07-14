@@ -1,9 +1,12 @@
 package com.focusremind.app.ui
 
 import android.content.Context
+import android.content.Intent
 import android.media.MediaPlayer
 import android.media.RingtoneManager
 import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -19,12 +22,19 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.focusremind.app.R
 
+// Sentinel values for notification_sound_index:
+//  -1 = silence (vibration only)
+//  -2 = custom user-picked audio file (URI stored separately)
+//  >=0 = index into the system RingtoneManager list
+internal const val CUSTOM_SOUND_INDEX = -2
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SoundPickerScreen(onBack: () -> Unit) {
     val context = LocalContext.current
     val prefs = remember { context.getSharedPreferences("focusremind_settings", Context.MODE_PRIVATE) }
     var selectedIndex by remember { mutableIntStateOf(prefs.getInt("notification_sound_index", 0)) }
+    var customUriString by remember { mutableStateOf(prefs.getString("notification_sound_custom_uri", null)) }
     var playingIndex by remember { mutableIntStateOf(-1) }
 
     val sounds = remember { getSystemSounds(context) }
@@ -70,6 +80,26 @@ fun SoundPickerScreen(onBack: () -> Unit) {
         }
     }
 
+    // Picks any audio file from the device (Music app, downloads, cloud
+    // storage providers, etc.) — not limited to the system ringtone list.
+    val customSoundLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        if (uri != null) {
+            try {
+                context.contentResolver.takePersistableUriPermission(
+                    uri, Intent.FLAG_GRANT_READ_URI_PERMISSION
+                )
+            } catch (_: Exception) {}
+            customUriString = uri.toString()
+            selectedIndex = CUSTOM_SOUND_INDEX
+            prefs.edit()
+                .putInt("notification_sound_index", CUSTOM_SOUND_INDEX)
+                .putString("notification_sound_custom_uri", uri.toString())
+                .apply()
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -86,6 +116,29 @@ fun SoundPickerScreen(onBack: () -> Unit) {
             Modifier.padding(padding),
             contentPadding = PaddingValues(8.dp)
         ) {
+            // Custom sound from device (Music app, downloads, cloud files...)
+            item {
+                SoundRow(
+                    name = if (selectedIndex == CUSTOM_SOUND_INDEX)
+                        "🎵 ${getCustomSoundName(context, customUriString)}"
+                    else "🎵 Wybierz z urządzenia...",
+                    isSelected = selectedIndex == CUSTOM_SOUND_INDEX,
+                    isPlaying = playingIndex == CUSTOM_SOUND_INDEX,
+                    onSelect = { customSoundLauncher.launch(arrayOf("audio/*")) },
+                    onPlay = {
+                        if (selectedIndex == CUSTOM_SOUND_INDEX && customUriString != null) {
+                            if (playingIndex == CUSTOM_SOUND_INDEX) {
+                                stopPreview()
+                            } else {
+                                playPreview(CUSTOM_SOUND_INDEX, Uri.parse(customUriString))
+                            }
+                        } else {
+                            customSoundLauncher.launch(arrayOf("audio/*"))
+                        }
+                    }
+                )
+            }
+
             // Silent option
             item {
                 SoundRow(
@@ -164,6 +217,26 @@ private fun SoundRow(
                 )
             }
         }
+    }
+}
+
+/**
+ * Tries to resolve a friendly display name for a custom-picked audio URI
+ * (e.g. the song title, from the content provider's DISPLAY_NAME column).
+ * Falls back to the last path segment, or a generic label if that fails.
+ */
+private fun getCustomSoundName(context: Context, uriString: String?): String {
+    if (uriString == null) return "Wybierz z urządzenia..."
+    return try {
+        val uri = Uri.parse(uriString)
+        context.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+            val nameIndex = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
+            if (nameIndex >= 0 && cursor.moveToFirst()) {
+                cursor.getString(nameIndex)
+            } else null
+        } ?: uri.lastPathSegment ?: "Własny dźwięk"
+    } catch (_: Exception) {
+        "Własny dźwięk"
     }
 }
 

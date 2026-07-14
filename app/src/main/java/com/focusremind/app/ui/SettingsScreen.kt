@@ -288,6 +288,11 @@ private fun setLanguage(languageCode: String) {
 }
 
 private fun getSelectedSoundName(context: Context, index: Int): String {
+    if (index == CUSTOM_SOUND_INDEX) {
+        val prefs = context.getSharedPreferences("focusremind_settings", Context.MODE_PRIVATE)
+        val uriString = prefs.getString("notification_sound_custom_uri", null)
+        return "🎵 ${getCustomSoundDisplayName(context, uriString)}"
+    }
     if (index < 0) return "\uD83D\uDD07 Cisza (tylko wibracja)"
     return try {
         val rm = RingtoneManager(context)
@@ -299,6 +304,19 @@ private fun getSelectedSoundName(context: Context, index: Int): String {
     } catch (_: Exception) { "Domy\u015Blny" }
 }
 
+private fun getCustomSoundDisplayName(context: Context, uriString: String?): String {
+    if (uriString == null) return "Własny dźwięk"
+    return try {
+        val uri = Uri.parse(uriString)
+        context.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+            val nameIndex = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
+            if (nameIndex >= 0 && cursor.moveToFirst()) cursor.getString(nameIndex) else null
+        } ?: uri.lastPathSegment ?: "Własny dźwięk"
+    } catch (_: Exception) {
+        "Własny dźwięk"
+    }
+}
+
 /**
  * Plays the SELECTED notification sound at the given volume.
  * This fixes the bug where the preview didn't play the chosen sound.
@@ -307,13 +325,18 @@ private fun playSelectedSoundPreview(context: Context, volume: Float) {
     try {
         val prefs = context.getSharedPreferences("focusremind_settings", Context.MODE_PRIVATE)
         val soundIndex = prefs.getInt("notification_sound_index", 0)
-        if (soundIndex < 0) return // silence mode - nothing to play
+        if (soundIndex == -1) return // silence mode - nothing to play
 
-        val rm = RingtoneManager(context)
-        rm.setType(RingtoneManager.TYPE_NOTIFICATION or RingtoneManager.TYPE_ALARM)
-        val cursor = rm.cursor
-        if (cursor.count == 0) return
-        val uri = rm.getRingtoneUri(soundIndex % cursor.count)
+        val uri = if (soundIndex == CUSTOM_SOUND_INDEX) {
+            val uriString = prefs.getString("notification_sound_custom_uri", null) ?: return
+            Uri.parse(uriString)
+        } else {
+            val rm = RingtoneManager(context)
+            rm.setType(RingtoneManager.TYPE_NOTIFICATION or RingtoneManager.TYPE_ALARM)
+            val cursor = rm.cursor
+            if (cursor.count == 0) return
+            rm.getRingtoneUri(soundIndex % cursor.count)
+        }
 
         val player = MediaPlayer()
         player.setDataSource(context, uri)

@@ -77,6 +77,17 @@ fun HomeScreen(onAddReminder: () -> Unit, onOpenSettings: () -> Unit, onOpenHist
     val context = LocalContext.current
     val dao = FocusRemindApp.instance.database.reminderDao()
     val reminders by dao.getActive().collectAsState(initial = emptyList())
+
+    // Ticks every 30s so "za X minut" / overdue styling on each card stays
+    // fresh without needing an unrelated recomposition (e.g. navigating
+    // away and back) to notice time has passed.
+    var nowTick by remember { mutableStateOf(System.currentTimeMillis()) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            kotlinx.coroutines.delay(30_000)
+            nowTick = System.currentTimeMillis()
+        }
+    }
     val scope = rememberCoroutineScope()
     val micPermission = rememberPermissionState(Manifest.permission.RECORD_AUDIO)
 
@@ -884,6 +895,7 @@ fun HomeScreen(onAddReminder: () -> Unit, onOpenSettings: () -> Unit, onOpenHist
                 items(reminders, key = { it.id }) { reminder ->
                     ReminderCard(
                         reminder = reminder,
+                        nowTick = nowTick,
                         onComplete = {
                             scope.launch {
                                 dao.complete(reminder.id)
@@ -939,9 +951,9 @@ fun HomeScreen(onAddReminder: () -> Unit, onOpenSettings: () -> Unit, onOpenHist
 }
 
 @Composable
-fun ReminderCard(reminder: Reminder, onComplete: () -> Unit, onEdit: () -> Unit, onSnooze: () -> Unit, onDelete: () -> Unit, onAddPhoto: () -> Unit, onLockedDeleteTap: () -> Unit, onOpenPhoto: () -> Unit) {
+fun ReminderCard(reminder: Reminder, nowTick: Long, onComplete: () -> Unit, onEdit: () -> Unit, onSnooze: () -> Unit, onDelete: () -> Unit, onAddPhoto: () -> Unit, onLockedDeleteTap: () -> Unit, onOpenPhoto: () -> Unit) {
     val overdueText = stringResource(R.string.overdue)
-    val timeText = remember(reminder.triggerAt) {
+    val timeText = remember(reminder.triggerAt, nowTick) {
         val diff = reminder.triggerAt - System.currentTimeMillis()
         when {
             diff < 0 -> "\u26A0\uFE0F $overdueText"

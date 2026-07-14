@@ -59,6 +59,15 @@ object ReminderNotificationBuilder {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
+        val snooze30Intent = PendingIntent.getBroadcast(
+            context, (reminderId * 10 + 3).toInt(),
+            Intent(context, NotificationActionReceiver::class.java).apply {
+                action = "SNOOZE_30"
+                putExtra("reminder_id", reminderId)
+            },
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
         // Custom collapsed view — title only, no buttons (native action buttons
         // below handle Done/+5/+15 — see .addAction() calls). Keeping this view
         // short means it fits within Android's collapsed-notification height
@@ -83,17 +92,17 @@ object ReminderNotificationBuilder {
             .setAutoCancel(false)
             .setFullScreenIntent(tapIntent, true)
             .setContentIntent(tapIntent)
-            // Swiping the notification away (dismiss) behaves exactly like
-            // tapping "+5 min" — stops the sound, snoozes 5 min, reschedules.
-            // Without this, a swiped-away notification left the alarm sound
-            // orphaned with literally no way to stop it except killing the app.
+            // Swiping the notification away (dismiss) still snoozes 5 min
+            // internally — a quick, low-friction default for an accidental
+            // swipe — even though "+5 min" is no longer its own visible
+            // button (replaced by +15 / +30 per user preference).
             .setDeleteIntent(snooze5Intent)
             .setCustomContentView(collapsedView)
             .setCustomBigContentView(expandedView)
             .setStyle(NotificationCompat.DecoratedCustomViewStyle())
             .addAction(android.R.drawable.checkbox_on_background, "✅ Zrobione", doneIntent)
-            .addAction(android.R.drawable.ic_menu_recent_history, "+5 min", snooze5Intent)
             .addAction(android.R.drawable.ic_menu_recent_history, "+15 min", snooze15Intent)
+            .addAction(android.R.drawable.ic_menu_recent_history, "+30 min", snooze30Intent)
             .build()
     }
 
