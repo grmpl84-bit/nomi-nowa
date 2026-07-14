@@ -83,6 +83,11 @@ object ReminderNotificationBuilder {
             .setAutoCancel(false)
             .setFullScreenIntent(tapIntent, true)
             .setContentIntent(tapIntent)
+            // Swiping the notification away (dismiss) behaves exactly like
+            // tapping "+5 min" — stops the sound, snoozes 5 min, reschedules.
+            // Without this, a swiped-away notification left the alarm sound
+            // orphaned with literally no way to stop it except killing the app.
+            .setDeleteIntent(snooze5Intent)
             .setCustomContentView(collapsedView)
             .setCustomBigContentView(expandedView)
             .setStyle(NotificationCompat.DecoratedCustomViewStyle())
