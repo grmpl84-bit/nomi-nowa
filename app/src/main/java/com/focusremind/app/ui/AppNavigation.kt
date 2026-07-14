@@ -26,7 +26,7 @@ private fun trialExpiresAt(): Long = Calendar.getInstance().apply {
 }.timeInMillis
 
 @Composable
-fun AppNavigation(startWithVoice: Boolean = false) {
+fun AppNavigation(startWithVoice: Boolean = false, skipSplash: Boolean = false) {
     val context = LocalContext.current
     val prefs = remember { context.getSharedPreferences("nomi_prefs", Context.MODE_PRIVATE) }
 
@@ -34,7 +34,7 @@ fun AppNavigation(startWithVoice: Boolean = false) {
 
     var showOnboarding by remember { mutableStateOf(!prefs.getBoolean("onboarding_done", false)) }
     // Skip splash when coming from widget (speed is key!)
-    var showSplash by remember { mutableStateOf(!startWithVoice) }
+    var showSplash by remember { mutableStateOf(!startWithVoice && !skipSplash) }
 
     if (isExpired) {
         TrialExpiredScreen()
