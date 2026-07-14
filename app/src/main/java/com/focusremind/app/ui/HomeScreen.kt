@@ -61,6 +61,7 @@ import com.focusremind.app.R
 import com.focusremind.app.data.Reminder
 import com.focusremind.app.notification.ReminderAlarmScheduler
 import com.focusremind.app.notification.ReminderNotificationBuilder
+import com.focusremind.app.notification.SoundPlayer
 import com.focusremind.app.speech.TimeParser
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
@@ -887,6 +888,14 @@ fun HomeScreen(onAddReminder: () -> Unit, onOpenSettings: () -> Unit, onOpenHist
                             scope.launch {
                                 dao.complete(reminder.id)
                                 ReminderAlarmScheduler.cancel(context, reminder.id)
+                                // Safety net: if the alarm sound was still playing
+                                // (e.g. user found the task on the list instead of
+                                // using the notification), stop it here too —
+                                // previously only the notification's own buttons
+                                // could do this.
+                                SoundPlayer.stop()
+                                (context.getSystemService(Context.NOTIFICATION_SERVICE) as android.app.NotificationManager)
+                                    .cancel(reminder.id.toInt())
                             }
                         },
                         onEdit = {
@@ -904,6 +913,9 @@ fun HomeScreen(onAddReminder: () -> Unit, onOpenSettings: () -> Unit, onOpenHist
                             scope.launch {
                                 dao.delete(reminder.id)
                                 ReminderAlarmScheduler.cancel(context, reminder.id)
+                                SoundPlayer.stop()
+                                (context.getSystemService(Context.NOTIFICATION_SERVICE) as android.app.NotificationManager)
+                                    .cancel(reminder.id.toInt())
                             }
                         },
                         onAddPhoto = {
