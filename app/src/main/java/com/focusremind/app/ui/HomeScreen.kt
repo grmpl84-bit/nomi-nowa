@@ -764,13 +764,22 @@ fun HomeScreen(onAddReminder: () -> Unit, onOpenSettings: () -> Unit, onOpenHist
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(Modifier.weight(1f)) {
-                        Image(
-                            painter = painterResource(R.drawable.ic_nomi_symbol),
-                            contentDescription = "Nomi",
-                            modifier = Modifier
-                                .size(36.dp)
-                                .graphicsLayer(scaleX = 2.2f, scaleY = 2.2f)
-                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Image(
+                                painter = painterResource(R.drawable.ic_nomi_symbol),
+                                contentDescription = "Nomi",
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .graphicsLayer(scaleX = 2.2f, scaleY = 2.2f)
+                            )
+                            Text(
+                                "omi",
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 46.sp,
+                                modifier = Modifier.padding(start = 6.dp)
+                            )
+                        }
                         Spacer(Modifier.height(2.dp))
                         Text(
                             "Just Say It. We'll Remember.",
