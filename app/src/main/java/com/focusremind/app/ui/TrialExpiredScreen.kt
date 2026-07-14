@@ -59,7 +59,7 @@ fun TrialExpiredScreen() {
             )
             Spacer(Modifier.height(16.dp))
             Text(
-                "Jeśli chcesz nadal korzystać z aplikacji, napisz do administratora na Facebooku albo na grmpl@gmail.com.",
+                "Jeśli chcesz nadal korzystać z aplikacji, napisz do administratora na Facebooku, Messengerze albo na grmpl84@gmail.com.",
                 color = Color.White.copy(alpha = 0.9f),
                 textAlign = TextAlign.Center,
                 style = MaterialTheme.typography.bodyMedium
