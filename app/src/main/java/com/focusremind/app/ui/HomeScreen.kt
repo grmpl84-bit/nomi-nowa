@@ -62,6 +62,7 @@ import com.focusremind.app.data.Reminder
 import com.focusremind.app.notification.ReminderAlarmScheduler
 import com.focusremind.app.notification.ReminderNotificationBuilder
 import com.focusremind.app.notification.SoundPlayer
+import com.focusremind.app.speech.ShoppingListParser
 import com.focusremind.app.speech.TimeParser
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
@@ -76,6 +77,7 @@ import java.util.*
 fun HomeScreen(onAddReminder: () -> Unit, onOpenSettings: () -> Unit, onOpenHistory: () -> Unit, onOpenRecurring: () -> Unit, onOpenShopping: () -> Unit, startRecordingImmediately: Boolean = false) {
     val context = LocalContext.current
     val dao = FocusRemindApp.instance.database.reminderDao()
+    val shoppingDao = FocusRemindApp.instance.database.shoppingDao()
     val reminders by dao.getActive().collectAsState(initial = emptyList())
 
     // Ticks every 30s so "za X minut" / overdue styling on each card stays
@@ -311,6 +313,30 @@ fun HomeScreen(onAddReminder: () -> Unit, onOpenSettings: () -> Unit, onOpenHist
             override fun onResults(results: Bundle?) {
                 val text = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull() ?: ""
                 recognizedText = text
+                isListening = false
+
+                // Shopping list commands have no time/date at all — check
+                // for them FIRST, before TimeParser even runs. This is the
+                // main mic entry point (home screen FAB + widget), so this
+                // check must live HERE, not only in the separate VoiceScreen.
+                val shoppingItemName = ShoppingListParser.parse(text)
+                if (shoppingItemName != null) {
+                    scope.launch {
+                        val existing = shoppingDao.findByName(shoppingItemName)
+                        if (existing != null) {
+                            android.widget.Toast.makeText(
+                                context, "$shoppingItemName jest już na liście", android.widget.Toast.LENGTH_SHORT
+                            ).show()
+                        } else {
+                            shoppingDao.insert(com.focusremind.app.data.ShoppingItem(name = shoppingItemName))
+                            android.widget.Toast.makeText(
+                                context, "Dodano: $shoppingItemName", android.widget.Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    }
+                    return
+                }
+
                 val parsed = TimeParser.parse(text)
                 parsedResult = parsed
                 editableTitle = if (parsed != null && parsed.cleanedText.isNotBlank()) {
@@ -318,7 +344,6 @@ fun HomeScreen(onAddReminder: () -> Unit, onOpenSettings: () -> Unit, onOpenHist
                 } else {
                     text.replaceFirstChar { it.uppercase() }
                 }
-                isListening = false
 
                 // AUTO-SAVE: If time was parsed from voice, save immediately without review
                 if (parsed != null && editableTitle.isNotBlank()) {
