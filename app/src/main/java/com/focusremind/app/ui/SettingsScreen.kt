@@ -233,6 +233,44 @@ fun SettingsScreen(onBack: () -> Unit, onOpenSoundPicker: () -> Unit, onShowOnbo
 
             HorizontalDivider()
 
+            // === MICROPHONE ===
+            Text("\uD83C\uDF99\uFE0F Mikrofon", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+
+            var micMode by remember { mutableStateOf(prefs.getString("mic_mode", "hold") ?: "hold") }
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(16.dp)) {
+                    Text("Sposób nagrywania", style = MaterialTheme.typography.titleSmall)
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        "Wybierz, jak ma działać przycisk mikrofonu",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        FilterChip(
+                            selected = micMode == "hold",
+                            onClick = { micMode = "hold"; prefs.edit().putString("mic_mode", "hold").apply() },
+                            label = { Text("Przytrzymaj") }
+                        )
+                        FilterChip(
+                            selected = micMode == "tap",
+                            onClick = { micMode = "tap"; prefs.edit().putString("mic_mode", "tap").apply() },
+                            label = { Text("Dotknij") }
+                        )
+                    }
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        if (micMode == "hold") "Trzymaj przycisk podczas mówienia, puść żeby zakończyć."
+                        else "Dotknij raz żeby zacząć nagrywać, dotknij ponownie żeby zakończyć.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
+            HorizontalDivider()
+
             // === LANGUAGE ===
             Text("\uD83C\uDF0D ${stringResource(R.string.language)}", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
 
