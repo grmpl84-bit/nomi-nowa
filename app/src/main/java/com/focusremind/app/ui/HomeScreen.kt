@@ -822,7 +822,10 @@ fun HomeScreen(onAddReminder: () -> Unit, onOpenSettings: () -> Unit, onOpenHist
             val pulse = rememberInfiniteTransition(label = "p")
                 .animateFloat(1f, 1.15f, infiniteRepeatable(tween(600), RepeatMode.Reverse), label = "s")
 
-            // PUSH-TO-TALK: press and hold to record, release to stop
+            // Mic gesture: "hold" (default, press-and-hold) or "tap" (tap to
+            // start, tap again to stop) — read fresh on every press so a
+            // change made in Settings takes effect without needing to
+            // recreate this screen.
             Box(
                 modifier = Modifier
                     .size(96.dp)
@@ -830,9 +833,19 @@ fun HomeScreen(onAddReminder: () -> Unit, onOpenSettings: () -> Unit, onOpenHist
                     .pointerInput(Unit) {
                         detectTapGestures(
                             onPress = {
-                                startListening()
-                                val released = tryAwaitRelease()
-                                if (released) stopAndProcess()
+                                val micMode = context.getSharedPreferences("focusremind_settings", Context.MODE_PRIVATE)
+                                    .getString("mic_mode", "hold")
+                                if (micMode == "tap") {
+                                    if (isListening) {
+                                        stopAndProcess()
+                                    } else {
+                                        startListening()
+                                    }
+                                } else {
+                                    startListening()
+                                    val released = tryAwaitRelease()
+                                    if (released) stopAndProcess()
+                                }
                             }
                         )
                     },

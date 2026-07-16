@@ -146,43 +146,62 @@ fun RecurringScreen(onBack: () -> Unit) {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         FilterChip(
                             selected = newFrequency == "DAILY",
-                            onClick = { newFrequency = "DAILY" },
+                            onClick = { newFrequency = "DAILY"; newDateTime = null },
                             label = { Text(stringResource(R.string.recurrence_daily)) }
                         )
                         FilterChip(
                             selected = newFrequency == "WEEKLY",
-                            onClick = { newFrequency = "WEEKLY" },
+                            onClick = { newFrequency = "WEEKLY"; newDateTime = null },
                             label = { Text(stringResource(R.string.recurrence_weekly)) }
                         )
                     }
 
-                    val formatted = remember(newDateTime) {
+                    val formatted = remember(newDateTime, newFrequency) {
                         newDateTime?.let {
-                            SimpleDateFormat("EEEE, d MMM yyyy, HH:mm", Locale.getDefault()).format(Date(it))
+                            if (newFrequency == "DAILY")
+                                SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(it))
+                            else
+                                SimpleDateFormat("EEEE, d MMM yyyy, HH:mm", Locale.getDefault()).format(Date(it))
                         }
                     }
                     OutlinedButton(
                         onClick = {
                             val cal = Calendar.getInstance()
-                            DatePickerDialog(context, { _, year, month, day ->
+                            if (newFrequency == "DAILY") {
+                                // Daily repeats forever starting today — only the
+                                // TIME matters, picking a date makes no sense here.
                                 TimePickerDialog(context, { _, hour, minute ->
                                     val chosen = Calendar.getInstance().apply {
-                                        set(Calendar.YEAR, year)
-                                        set(Calendar.MONTH, month)
-                                        set(Calendar.DAY_OF_MONTH, day)
                                         set(Calendar.HOUR_OF_DAY, hour)
                                         set(Calendar.MINUTE, minute)
                                         set(Calendar.SECOND, 0)
+                                        if (timeInMillis <= System.currentTimeMillis()) add(Calendar.DAY_OF_YEAR, 1)
                                     }
                                     newDateTime = chosen.timeInMillis
                                 }, cal.get(Calendar.HOUR_OF_DAY), cal.get(Calendar.MINUTE), true).show()
-                            }, cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH)).show()
+                            } else {
+                                DatePickerDialog(context, { _, year, month, day ->
+                                    TimePickerDialog(context, { _, hour, minute ->
+                                        val chosen = Calendar.getInstance().apply {
+                                            set(Calendar.YEAR, year)
+                                            set(Calendar.MONTH, month)
+                                            set(Calendar.DAY_OF_MONTH, day)
+                                            set(Calendar.HOUR_OF_DAY, hour)
+                                            set(Calendar.MINUTE, minute)
+                                            set(Calendar.SECOND, 0)
+                                        }
+                                        newDateTime = chosen.timeInMillis
+                                    }, cal.get(Calendar.HOUR_OF_DAY), cal.get(Calendar.MINUTE), true).show()
+                                }, cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH)).show()
+                            }
                         },
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Icon(Icons.Default.CalendarMonth, null, Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))
-                        Text(formatted ?: stringResource(R.string.pick_date_time))
+                        Text(
+                            formatted ?: if (newFrequency == "DAILY") "Wybierz godzinę..." else stringResource(R.string.pick_date_time)
+                        )
                     }
                 }
             },

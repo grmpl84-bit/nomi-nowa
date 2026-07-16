@@ -465,7 +465,8 @@ object TimeParser {
     private fun parseDayOfWeek(
         text: String,
         daysMap: Map<String, Int>,
-        timePrefix: Regex
+        timePrefix: Regex,
+        dayParts: Map<String, Int>? = null
     ): Result? {
         for ((dayName, dayOfWeek) in daysMap.entries.sortedByDescending { it.key.length }) {
             if (text.contains(dayName)) {
@@ -481,6 +482,19 @@ object TimeParser {
                         // regex match, which could swallow unrelated words.
                         val triggerPrefix = m.value.removeSuffix(m.groupValues[1])
                         toStrip = triggerPrefix + matchedTime
+                    }
+                }
+                // No explicit clock time found after the day name — check for
+                // a part-of-day word ("wieczorem", "rano"...) before falling
+                // back to the plain 9:00 default.
+                if (toStrip == null && dayParts != null) {
+                    for ((part, partHour) in dayParts.entries.sortedByDescending { it.key.length }) {
+                        if (afterDay.contains(part)) {
+                            hour = partHour
+                            minute = 0
+                            toStrip = part
+                            break
+                        }
                     }
                 }
                 val cal = getNextDayOfWeek(dayOfWeek, hour, minute)
@@ -527,8 +541,11 @@ object TimeParser {
             }
         }
 
-        // Day of week PL: "w poniedziałek o 15:30"
-        parseDayOfWeek(text, plDaysOfWeek, Regex("""o\s+((?:\S+\s+){0,1}\S+)"""))?.let { return it }
+        // Day of week is checked further below (after jutro/dziś), so an
+        // explicit "jutro"/"dziś" trigger always wins over a day name that
+        // merely appears in the reminder CONTENT (e.g. "jutro przypomnij mi,
+        // że w piątek mam wizytę" — "piątek" describes the appointment, not
+        // when to be reminded).
 
         // "za X minut/minutę/minuty"
         Regex("""za\s+(.+?)\s*min(?:ut[ęy]?[ęe]?)?""").find(text)?.let {
@@ -660,17 +677,12 @@ object TimeParser {
             }
         }
 
-        // Bare part of day, no "jutro"/"dziś" — e.g. just "wieczorem zadzwoń do mamy".
-        // Defaults to today at the anchor hour, or tomorrow if that's already passed.
-        for ((part, hour) in plDayParts.entries.sortedByDescending { it.key.length }) {
-            if (text.contains(part)) {
-                val cal = Calendar.getInstance().apply {
-                    set(Calendar.HOUR_OF_DAY, hour); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0)
-                    if (timeInMillis <= System.currentTimeMillis()) add(Calendar.DAY_OF_YEAR, 1)
-                }
-                return Result(cal.timeInMillis, text.replace(part, "").trim())
-            }
-        }
+        // Day of week PL: "w poniedziałek o 15:30" / "w czwartek wieczorem" —
+        // checked here (not near the top) so it never hijacks a sentence
+        // that actually has an explicit "jutro"/"dziś" trigger elsewhere.
+        // Also passes plDayParts so "wieczorem"/"rano" after a day name is
+        // understood, not just "o <clock>".
+        parseDayOfWeek(text, plDaysOfWeek, Regex("""o\s+((?:\S+\s+){0,1}\S+)"""), plDayParts)?.let { return it }
 
         // "o dwudziestej [trzydzieści]"
         for ((ordinal, hour) in plOrdinalHours.entries.sortedByDescending { it.key.length }) {
@@ -693,6 +705,22 @@ object TimeParser {
                     if (timeInMillis <= System.currentTimeMillis()) add(Calendar.DAY_OF_YEAR, 1)
                 }
                 return Result(cal.timeInMillis, text.replace(it.value, "").trim())
+            }
+        }
+
+        // Bare part of day, no "jutro"/"dziś"/explicit clock time at all —
+        // e.g. just "wieczorem zadzwoń do mamy". Checked LAST among the
+        // Polish patterns so it never overrides an explicit clock time
+        // that's also present (e.g. "o 10 rano" must respect the "10", not
+        // silently default to 8:00 for "rano").
+        // Defaults to today at the anchor hour, or tomorrow if that's already passed.
+        for ((part, hour) in plDayParts.entries.sortedByDescending { it.key.length }) {
+            if (text.contains(part)) {
+                val cal = Calendar.getInstance().apply {
+                    set(Calendar.HOUR_OF_DAY, hour); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0)
+                    if (timeInMillis <= System.currentTimeMillis()) add(Calendar.DAY_OF_YEAR, 1)
+                }
+                return Result(cal.timeInMillis, text.replace(part, "").trim())
             }
         }
 
