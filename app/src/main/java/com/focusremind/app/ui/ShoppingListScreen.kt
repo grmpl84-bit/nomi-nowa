@@ -118,7 +118,7 @@ fun ShoppingListScreen(onOpenHome: () -> Unit, onOpenRecurring: () -> Unit) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 FloatingActionButton(onClick = { newItemName = ""; showAddDialog = true }) {
-                    Icon(Icons.Default.Add, null, modifier = Modifier.size(28.dp))
+                    Icon(Icons.Default.Add, null)
                 }
                 VoiceMicFab(recognizer)
             }

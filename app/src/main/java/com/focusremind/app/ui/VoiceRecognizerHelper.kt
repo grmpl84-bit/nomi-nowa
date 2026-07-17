@@ -123,7 +123,7 @@ fun rememberVoiceRecognizer(onResult: (String) -> Unit): VoiceRecognizerControll
  * respecting the same hold/tap mic-mode Settings preference.
  */
 @Composable
-fun VoiceMicFab(controller: VoiceRecognizerController, size: Dp = 64.dp) {
+fun VoiceMicFab(controller: VoiceRecognizerController, size: Dp = 96.dp) {
     val context = LocalContext.current
     Box(
         modifier = Modifier
