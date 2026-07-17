@@ -109,4 +109,27 @@
     <string name="reminder_saved">Zapisano!</string>
     <string name="show_setup_guide">Pokaż przewodnik</string>
     <string name="show_setup_guide_desc">Wyświetl ponownie plansze konfiguracyjne</string>
+    <string name="shopping_nav_label">Zakupy</string>
+    <string name="shopping_tab_title">Zakupy</string>
+    <string name="shopping_empty_all">Lista zakupów jest pusta</string>
+    <string name="shopping_to_buy_header">🛒 Do kupienia</string>
+    <string name="shopping_clear_list_btn">Wyczyść listę</string>
+    <string name="shopping_nothing_to_buy">Nic do kupienia 🎉</string>
+    <string name="shopping_cart_header">✅ Koszyk</string>
+    <string name="shopping_cart_empty">Koszyk jest pusty</string>
+    <string name="shopping_clear_all_btn">Wyczyść wszystko</string>
+    <string name="shopping_new_item_title">Nowy produkt</string>
+    <string name="shopping_item_name_label">Nazwa produktu</string>
+    <string name="shopping_edit_item_title">Edytuj produkt</string>
+    <string name="shopping_clear_list_confirm_title">Wyczyścić listę zakupów?</string>
+    <string name="shopping_clear_list_confirm_msg">Produkty w koszyku zostaną bez zmian.</string>
+    <string name="shopping_clear_btn">Wyczyść</string>
+    <string name="shopping_clear_all_confirm_title">Wyczyścić wszystko?</string>
+    <string name="shopping_clear_all_confirm_msg">Usunie zarówno listę zakupów, jak i zawartość koszyka.</string>
+    <string name="shopping_edit_desc">Edytuj</string>
+    <string name="shopping_delete_desc">Usuń</string>
+    <string name="shopping_undo_desc">Cofnij do listy</string>
+    <string name="shopping_added_toast">Dodano: %1$s</string>
+    <string name="shopping_duplicate_toast">%1$s jest już na liście</string>
+    <string name="recurring_added_toast">Dodano cykliczne przypomnienie: %1$s</string>
 </resources>

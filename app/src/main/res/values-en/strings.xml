@@ -109,4 +109,27 @@
     <string name="reminder_saved">Saved!</string>
     <string name="show_setup_guide">Show setup guide</string>
     <string name="show_setup_guide_desc">Show the configuration screens again</string>
+    <string name="shopping_nav_label">Shopping</string>
+    <string name="shopping_tab_title">Shopping</string>
+    <string name="shopping_empty_all">Your shopping list is empty</string>
+    <string name="shopping_to_buy_header">🛒 To buy</string>
+    <string name="shopping_clear_list_btn">Clear list</string>
+    <string name="shopping_nothing_to_buy">Nothing to buy 🎉</string>
+    <string name="shopping_cart_header">✅ Cart</string>
+    <string name="shopping_cart_empty">Your cart is empty</string>
+    <string name="shopping_clear_all_btn">Clear everything</string>
+    <string name="shopping_new_item_title">New item</string>
+    <string name="shopping_item_name_label">Item name</string>
+    <string name="shopping_edit_item_title">Edit item</string>
+    <string name="shopping_clear_list_confirm_title">Clear the shopping list?</string>
+    <string name="shopping_clear_list_confirm_msg">Items already in the cart will stay untouched.</string>
+    <string name="shopping_clear_btn">Clear</string>
+    <string name="shopping_clear_all_confirm_title">Clear everything?</string>
+    <string name="shopping_clear_all_confirm_msg">This removes both the shopping list and the cart contents.</string>
+    <string name="shopping_edit_desc">Edit</string>
+    <string name="shopping_delete_desc">Delete</string>
+    <string name="shopping_undo_desc">Move back to list</string>
+    <string name="shopping_added_toast">Added: %1$s</string>
+    <string name="shopping_duplicate_toast">%1$s is already on the list</string>
+    <string name="recurring_added_toast">Added recurring reminder: %1$s</string>
 </resources>

@@ -73,7 +73,7 @@ fun ShoppingListScreen(onOpenHome: () -> Unit, onOpenRecurring: () -> Unit) {
                     modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("Zakupy", color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.shopping_tab_title), color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold)
                 }
             }
         },
@@ -93,7 +93,7 @@ fun ShoppingListScreen(onOpenHome: () -> Unit, onOpenRecurring: () -> Unit) {
     ) { padding ->
         if (toBuy.isEmpty() && inCart.isEmpty()) {
             Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                Text("Lista zakupów jest pusta", fontSize = 18.sp, color = MutedColor)
+                Text(stringResource(R.string.shopping_empty_all), fontSize = 18.sp, color = MutedColor)
             }
         } else {
             LazyColumn(
@@ -108,14 +108,14 @@ fun ShoppingListScreen(onOpenHome: () -> Unit, onOpenRecurring: () -> Unit) {
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            "🛒 Do kupienia",
+                            stringResource(R.string.shopping_to_buy_header),
                             fontSize = 22.sp,
                             fontWeight = FontWeight.Bold,
                             color = InkColor
                         )
                         if (toBuy.isNotEmpty()) {
                             TextButton(onClick = { showClearToBuyConfirm = true }) {
-                                Text("Wyczyść listę", fontSize = 16.sp)
+                                Text(stringResource(R.string.shopping_clear_list_btn), fontSize = 16.sp)
                             }
                         }
                     }
@@ -124,7 +124,7 @@ fun ShoppingListScreen(onOpenHome: () -> Unit, onOpenRecurring: () -> Unit) {
                 if (toBuy.isEmpty()) {
                     item {
                         Text(
-                            "Nic do kupienia 🎉",
+                            stringResource(R.string.shopping_nothing_to_buy),
                             fontSize = 18.sp,
                             color = MutedColor,
                             modifier = Modifier.padding(vertical = 8.dp)
@@ -164,12 +164,12 @@ fun ShoppingListScreen(onOpenHome: () -> Unit, onOpenRecurring: () -> Unit) {
                                         editingItem = shoppingItem
                                         editName = shoppingItem.name
                                     }) {
-                                        Icon(Icons.Default.Edit, "Edytuj", modifier = Modifier.size(26.dp), tint = MutedColor)
+                                        Icon(Icons.Default.Edit, stringResource(R.string.shopping_edit_desc), modifier = Modifier.size(26.dp), tint = MutedColor)
                                     }
                                     IconButton(onClick = {
                                         scope.launch { dao.delete(shoppingItem.id) }
                                     }) {
-                                        Icon(Icons.Default.Delete, "Usuń", modifier = Modifier.size(26.dp), tint = Color(0xFFB4432F))
+                                        Icon(Icons.Default.Delete, stringResource(R.string.shopping_delete_desc), modifier = Modifier.size(26.dp), tint = Color(0xFFB4432F))
                                     }
                                 }
                             }
@@ -181,7 +181,7 @@ fun ShoppingListScreen(onOpenHome: () -> Unit, onOpenRecurring: () -> Unit) {
 
                 item {
                     Text(
-                        "✅ Koszyk",
+                        stringResource(R.string.shopping_cart_header),
                         fontSize = 22.sp,
                         fontWeight = FontWeight.Bold,
                         color = InkColor
@@ -191,7 +191,7 @@ fun ShoppingListScreen(onOpenHome: () -> Unit, onOpenRecurring: () -> Unit) {
                 if (inCart.isEmpty()) {
                     item {
                         Text(
-                            "Koszyk jest pusty",
+                            stringResource(R.string.shopping_cart_empty),
                             fontSize = 18.sp,
                             color = MutedColor,
                             modifier = Modifier.padding(vertical = 8.dp)
@@ -213,7 +213,7 @@ fun ShoppingListScreen(onOpenHome: () -> Unit, onOpenRecurring: () -> Unit) {
                                 IconButton(onClick = {
                                     scope.launch { dao.setInCart(shoppingItem.id, false) }
                                 }) {
-                                    Icon(Icons.Default.ArrowBack, "Cofnij do listy", modifier = Modifier.size(28.dp), tint = CartTextColor)
+                                    Icon(Icons.Default.ArrowBack, stringResource(R.string.shopping_undo_desc), modifier = Modifier.size(28.dp), tint = CartTextColor)
                                 }
                                 Text(
                                     shoppingItem.name,
@@ -225,7 +225,7 @@ fun ShoppingListScreen(onOpenHome: () -> Unit, onOpenRecurring: () -> Unit) {
                                 IconButton(onClick = {
                                     scope.launch { dao.delete(shoppingItem.id) }
                                 }) {
-                                    Icon(Icons.Default.Delete, "Usuń", modifier = Modifier.size(26.dp), tint = Color(0xFFB4432F))
+                                    Icon(Icons.Default.Delete, stringResource(R.string.shopping_delete_desc), modifier = Modifier.size(26.dp), tint = Color(0xFFB4432F))
                                 }
                             }
                         }
@@ -239,7 +239,7 @@ fun ShoppingListScreen(onOpenHome: () -> Unit, onOpenRecurring: () -> Unit) {
                         onClick = { showClearAllConfirm = true },
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("Wyczyść wszystko", fontSize = 18.sp, color = Color(0xFFB4432F))
+                        Text(stringResource(R.string.shopping_clear_all_btn), fontSize = 18.sp, color = Color(0xFFB4432F))
                     }
                 }
             }
@@ -250,12 +250,12 @@ fun ShoppingListScreen(onOpenHome: () -> Unit, onOpenRecurring: () -> Unit) {
     if (showAddDialog) {
         AlertDialog(
             onDismissRequest = { showAddDialog = false },
-            title = { Text("Nowy produkt", fontSize = 20.sp) },
+            title = { Text(stringResource(R.string.shopping_new_item_title), fontSize = 20.sp) },
             text = {
                 OutlinedTextField(
                     value = newItemName,
                     onValueChange = { newItemName = it },
-                    label = { Text("Nazwa produktu", fontSize = 16.sp) },
+                    label = { Text(stringResource(R.string.shopping_item_name_label), fontSize = 16.sp) },
                     textStyle = androidx.compose.ui.text.TextStyle(fontSize = 20.sp),
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
@@ -288,12 +288,12 @@ fun ShoppingListScreen(onOpenHome: () -> Unit, onOpenRecurring: () -> Unit) {
     if (editingItem != null) {
         AlertDialog(
             onDismissRequest = { editingItem = null },
-            title = { Text("Edytuj produkt", fontSize = 20.sp) },
+            title = { Text(stringResource(R.string.shopping_edit_item_title), fontSize = 20.sp) },
             text = {
                 OutlinedTextField(
                     value = editName,
                     onValueChange = { editName = it },
-                    label = { Text("Nazwa produktu", fontSize = 16.sp) },
+                    label = { Text(stringResource(R.string.shopping_item_name_label), fontSize = 16.sp) },
                     textStyle = androidx.compose.ui.text.TextStyle(fontSize = 20.sp),
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
@@ -322,8 +322,8 @@ fun ShoppingListScreen(onOpenHome: () -> Unit, onOpenRecurring: () -> Unit) {
     if (showClearToBuyConfirm) {
         AlertDialog(
             onDismissRequest = { showClearToBuyConfirm = false },
-            title = { Text("Wyczyścić listę zakupów?", fontSize = 20.sp) },
-            text = { Text("Produkty w koszyku zostaną bez zmian.", fontSize = 16.sp) },
+            title = { Text(stringResource(R.string.shopping_clear_list_confirm_title), fontSize = 20.sp) },
+            text = { Text(stringResource(R.string.shopping_clear_list_confirm_msg), fontSize = 16.sp) },
             confirmButton = {
                 Button(
                     onClick = {
@@ -331,7 +331,7 @@ fun ShoppingListScreen(onOpenHome: () -> Unit, onOpenRecurring: () -> Unit) {
                         showClearToBuyConfirm = false
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
-                ) { Text("Wyczyść", fontSize = 16.sp) }
+                ) { Text(stringResource(R.string.shopping_clear_btn), fontSize = 16.sp) }
             },
             dismissButton = {
                 TextButton(onClick = { showClearToBuyConfirm = false }) { Text(stringResource(R.string.cancel), fontSize = 16.sp) }
@@ -343,8 +343,8 @@ fun ShoppingListScreen(onOpenHome: () -> Unit, onOpenRecurring: () -> Unit) {
     if (showClearAllConfirm) {
         AlertDialog(
             onDismissRequest = { showClearAllConfirm = false },
-            title = { Text("Wyczyścić wszystko?", fontSize = 20.sp) },
-            text = { Text("Usunie zarówno listę zakupów, jak i zawartość koszyka.", fontSize = 16.sp) },
+            title = { Text(stringResource(R.string.shopping_clear_all_confirm_title), fontSize = 20.sp) },
+            text = { Text(stringResource(R.string.shopping_clear_all_confirm_msg), fontSize = 16.sp) },
             confirmButton = {
                 Button(
                     onClick = {
@@ -352,7 +352,7 @@ fun ShoppingListScreen(onOpenHome: () -> Unit, onOpenRecurring: () -> Unit) {
                         showClearAllConfirm = false
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
-                ) { Text("Wyczyść wszystko", fontSize = 16.sp) }
+                ) { Text(stringResource(R.string.shopping_clear_all_btn), fontSize = 16.sp) }
             },
             dismissButton = {
                 TextButton(onClick = { showClearAllConfirm = false }) { Text(stringResource(R.string.cancel), fontSize = 16.sp) }

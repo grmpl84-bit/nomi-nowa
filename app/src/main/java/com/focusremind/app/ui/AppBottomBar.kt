@@ -42,7 +42,7 @@ fun AppBottomBar(
             selected = current == "shopping",
             onClick = onOpenShopping,
             icon = { Icon(Icons.Default.ShoppingCart, null) },
-            label = { Text("Zakupy") }
+            label = { Text(stringResource(R.string.shopping_nav_label)) }
         )
     }
 }

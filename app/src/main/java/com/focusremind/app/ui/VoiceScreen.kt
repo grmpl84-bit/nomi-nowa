@@ -26,6 +26,7 @@ import com.focusremind.app.FocusRemindApp
 import com.focusremind.app.R
 import com.focusremind.app.data.Reminder
 import com.focusremind.app.notification.ReminderAlarmScheduler
+import com.focusremind.app.speech.RecurringVoiceParser
 import com.focusremind.app.speech.ShoppingListParser
 import com.focusremind.app.speech.TimeParser
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
@@ -81,14 +82,40 @@ fun VoiceScreen(onBack: () -> Unit) {
                         val existing = shoppingDao.findByName(shoppingItemName)
                         if (existing != null) {
                             android.widget.Toast.makeText(
-                                context, "$shoppingItemName jest już na liście", android.widget.Toast.LENGTH_SHORT
+                                context, context.getString(R.string.shopping_duplicate_toast, shoppingItemName), android.widget.Toast.LENGTH_SHORT
                             ).show()
                         } else {
                             shoppingDao.insert(com.focusremind.app.data.ShoppingItem(name = shoppingItemName))
                             android.widget.Toast.makeText(
-                                context, "Dodano: $shoppingItemName", android.widget.Toast.LENGTH_SHORT
+                                context, context.getString(R.string.shopping_added_toast, shoppingItemName), android.widget.Toast.LENGTH_SHORT
                             ).show()
                         }
+                        onBack()
+                    }
+                    return
+                }
+
+                // Recurring reminder commands — same dedicated flow as in
+                // HomeScreen's main mic, saved directly with recurrence set.
+                val recurringResult = RecurringVoiceParser.parse(text)
+                if (recurringResult != null) {
+                    scope.launch {
+                        val id = dao.insert(
+                            Reminder(
+                                title = recurringResult.cleanedText,
+                                triggerAt = recurringResult.triggerAt,
+                                isVoiceCreated = true,
+                                originalVoiceText = text,
+                                recurrence = recurringResult.recurrence
+                            )
+                        )
+                        ReminderAlarmScheduler.schedule(
+                            context,
+                            Reminder(id = id, title = recurringResult.cleanedText, triggerAt = recurringResult.triggerAt, recurrence = recurringResult.recurrence)
+                        )
+                        android.widget.Toast.makeText(
+                            context, context.getString(R.string.recurring_added_toast, recurringResult.cleanedText), android.widget.Toast.LENGTH_SHORT
+                        ).show()
                         onBack()
                     }
                     return
