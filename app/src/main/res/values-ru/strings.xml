@@ -132,4 +132,7 @@
     <string name="shopping_added_toast">Добавлено: %1$s</string>
     <string name="shopping_duplicate_toast">%1$s уже в списке</string>
     <string name="recurring_added_toast">Добавлено повторяющееся напоминание: %1$s</string>
+    <string name="shopping_voice_not_recognized">Не распознано. Попробуйте, например: «Добавь молоко в список покупок»</string>
+    <string name="recurring_voice_not_recognized">Частота не распознана. Попробуйте, например: «Каждый день в 21 напомни про добавки»</string>
+    <string name="add_reminder_title">Новое напоминание</string>
 </resources>

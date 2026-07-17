@@ -132,4 +132,7 @@
     <string name="shopping_added_toast">Aggiunto: %1$s</string>
     <string name="shopping_duplicate_toast">%1$s è già nella lista</string>
     <string name="recurring_added_toast">Promemoria ricorrente aggiunto: %1$s</string>
+    <string name="shopping_voice_not_recognized">Non riconosciuto. Prova ad es. \"Aggiungi latte alla lista della spesa\"</string>
+    <string name="recurring_voice_not_recognized">Frequenza non riconosciuta. Prova ad es. \"Ogni giorno alle 21 ricordami gli integratori\"</string>
+    <string name="add_reminder_title">Nuovo promemoria</string>
 </resources>

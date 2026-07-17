@@ -12,6 +12,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -23,6 +24,7 @@ import androidx.compose.ui.unit.sp
 import com.focusremind.app.FocusRemindApp
 import com.focusremind.app.R
 import com.focusremind.app.data.ShoppingItem
+import com.focusremind.app.speech.ShoppingListParser
 import kotlinx.coroutines.launch
 
 // Fixed brand colors — same philosophy as the reminder list cards: a
@@ -40,6 +42,7 @@ private val BrandGradient = Brush.linearGradient(listOf(Color(0xFF9C27B0), Color
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ShoppingListScreen(onOpenHome: () -> Unit, onOpenRecurring: () -> Unit) {
+    val context = LocalContext.current
     val dao = FocusRemindApp.instance.database.shoppingDao()
     val scope = rememberCoroutineScope()
 
@@ -54,6 +57,29 @@ fun ShoppingListScreen(onOpenHome: () -> Unit, onOpenRecurring: () -> Unit) {
 
     var showClearToBuyConfirm by remember { mutableStateOf(false) }
     var showClearAllConfirm by remember { mutableStateOf(false) }
+
+    val recognizer = rememberVoiceRecognizer { text ->
+        val itemName = ShoppingListParser.parse(text)
+        if (itemName != null) {
+            scope.launch {
+                val existing = dao.findByName(itemName)
+                if (existing != null) {
+                    android.widget.Toast.makeText(
+                        context, context.getString(R.string.shopping_duplicate_toast, itemName), android.widget.Toast.LENGTH_SHORT
+                    ).show()
+                } else {
+                    dao.insert(ShoppingItem(name = itemName))
+                    android.widget.Toast.makeText(
+                        context, context.getString(R.string.shopping_added_toast, itemName), android.widget.Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+        } else {
+            android.widget.Toast.makeText(
+                context, context.getString(R.string.shopping_voice_not_recognized), android.widget.Toast.LENGTH_LONG
+            ).show()
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -86,8 +112,15 @@ fun ShoppingListScreen(onOpenHome: () -> Unit, onOpenRecurring: () -> Unit) {
             )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = { newItemName = ""; showAddDialog = true }) {
-                Icon(Icons.Default.Add, null, modifier = Modifier.size(28.dp))
+            Row(
+                Modifier.fillMaxWidth().padding(horizontal = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                FloatingActionButton(onClick = { newItemName = ""; showAddDialog = true }) {
+                    Icon(Icons.Default.Add, null, modifier = Modifier.size(28.dp))
+                }
+                VoiceMicFab(recognizer)
             }
         }
     ) { padding ->

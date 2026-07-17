@@ -280,6 +280,10 @@ fun HomeScreen(onAddReminder: () -> Unit, onOpenSettings: () -> Unit, onOpenHist
 
     // Edit dialog state
     var showEditDialog by remember { mutableStateOf(false) }
+    var showManualAddDialog by remember { mutableStateOf(false) }
+    var manualTitle by remember { mutableStateOf("") }
+    var manualMinutes by remember { mutableIntStateOf(0) }
+    var manualCustomDateTime by remember { mutableStateOf<Long?>(null) }
     var editReminder by remember { mutableStateOf<Reminder?>(null) }
     var editTitle by remember { mutableStateOf("") }
     var editMinutes by remember { mutableIntStateOf(0) }
@@ -698,6 +702,104 @@ fun HomeScreen(onAddReminder: () -> Unit, onOpenSettings: () -> Unit, onOpenHist
         )
     }
 
+    // Manual "+" add — a plain, non-voice way to create a one-time reminder,
+    // mirroring the edit dialog's quick-minute chips + custom date/time picker.
+    if (showManualAddDialog) {
+        AlertDialog(
+            onDismissRequest = { showManualAddDialog = false },
+            title = { Text(stringResource(R.string.add_reminder_title)) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    OutlinedTextField(
+                        value = manualTitle,
+                        onValueChange = { manualTitle = it },
+                        label = { Text(stringResource(R.string.reminder_label)) },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Text(stringResource(R.string.when_remind), style = MaterialTheme.typography.titleSmall)
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        listOf(5 to "5 min", 15 to "15 min", 30 to "30 min").forEach { (min, label) ->
+                            FilterChip(
+                                selected = manualMinutes == min && manualCustomDateTime == null,
+                                onClick = { manualMinutes = min; manualCustomDateTime = null },
+                                label = { Text(label) }
+                            )
+                        }
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        listOf(60 to "1h", 120 to "2h", 1440 to stringResource(R.string.tomorrow)).forEach { (min, label) ->
+                            FilterChip(
+                                selected = manualMinutes == min && manualCustomDateTime == null,
+                                onClick = { manualMinutes = min; manualCustomDateTime = null },
+                                label = { Text(label) }
+                            )
+                        }
+                    }
+
+                    if (manualCustomDateTime != null) {
+                        val formatted = remember(manualCustomDateTime) {
+                            SimpleDateFormat("EEEE, d MMM yyyy, HH:mm", Locale.getDefault()).format(Date(manualCustomDateTime!!))
+                        }
+                        Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer)) {
+                            Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Text("\u23F0", style = MaterialTheme.typography.titleMedium)
+                                Spacer(Modifier.width(8.dp))
+                                Text(formatted, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+                            }
+                        }
+                    }
+
+                    OutlinedButton(
+                        onClick = {
+                            val cal = Calendar.getInstance()
+                            DatePickerDialog(context, { _, year, month, day ->
+                                TimePickerDialog(context, { _, hour, minute ->
+                                    val chosen = Calendar.getInstance().apply {
+                                        set(Calendar.YEAR, year)
+                                        set(Calendar.MONTH, month)
+                                        set(Calendar.DAY_OF_MONTH, day)
+                                        set(Calendar.HOUR_OF_DAY, hour)
+                                        set(Calendar.MINUTE, minute)
+                                        set(Calendar.SECOND, 0)
+                                    }
+                                    manualCustomDateTime = chosen.timeInMillis
+                                    manualMinutes = 0
+                                }, cal.get(Calendar.HOUR_OF_DAY), cal.get(Calendar.MINUTE), true).show()
+                            }, cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH)).show()
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(Icons.Default.CalendarMonth, null, Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text(stringResource(R.string.pick_date_time))
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val triggerAt = when {
+                            manualCustomDateTime != null -> manualCustomDateTime!!
+                            manualMinutes > 0 -> System.currentTimeMillis() + manualMinutes * 60_000L
+                            else -> System.currentTimeMillis() + 15 * 60_000L
+                        }
+                        val title = manualTitle
+                        scope.launch {
+                            val id = dao.insert(Reminder(title = title, triggerAt = triggerAt))
+                            ReminderAlarmScheduler.schedule(context, Reminder(id = id, title = title, triggerAt = triggerAt))
+                        }
+                        showManualAddDialog = false
+                    },
+                    enabled = manualTitle.isNotBlank() && (manualMinutes > 0 || manualCustomDateTime != null)
+                ) { Text(stringResource(R.string.save)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showManualAddDialog = false }) { Text(stringResource(R.string.cancel)) }
+            }
+        )
+    }
+
     // Bottom sheet for voice result
     if (showResult) {
         ModalBottomSheet(onDismissRequest = { showResult = false }) {
@@ -850,6 +952,20 @@ fun HomeScreen(onAddReminder: () -> Unit, onOpenSettings: () -> Unit, onOpenHist
             val pulse = rememberInfiniteTransition(label = "p")
                 .animateFloat(1f, 1.15f, infiniteRepeatable(tween(600), RepeatMode.Reverse), label = "s")
 
+            Row(
+                Modifier.fillMaxWidth().padding(horizontal = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                FloatingActionButton(onClick = {
+                    manualTitle = ""
+                    manualMinutes = 0
+                    manualCustomDateTime = null
+                    showManualAddDialog = true
+                }) {
+                    Icon(Icons.Default.Add, null)
+                }
+
             // Mic gesture: "hold" (default, press-and-hold) or "tap" (tap to
             // start, tap again to stop) — read fresh on every press so a
             // change made in Settings takes effect without needing to
@@ -915,6 +1031,7 @@ fun HomeScreen(onAddReminder: () -> Unit, onOpenSettings: () -> Unit, onOpenHist
                     }
                 }
             }
+        }
         }
     ) { padding ->
         if (reminders.isEmpty() && !isListening) {
@@ -1180,7 +1297,7 @@ fun ReminderCard(reminder: Reminder, nowTick: Long, onComplete: () -> Unit, onEd
  * Returns the appropriate speech recognition locale based on app language setting.
  * Maps app language codes to full BCP-47 locale tags for SpeechRecognizer.
  */
-private fun getSpeechRecognitionLocale(context: Context): String {
+internal fun getSpeechRecognitionLocale(context: Context): String {
     val prefs = context.getSharedPreferences("focusremind_settings", Context.MODE_PRIVATE)
     // Check app-level locale override first
     val appLocales = androidx.appcompat.app.AppCompatDelegate.getApplicationLocales()

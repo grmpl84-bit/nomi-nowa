@@ -132,4 +132,7 @@
     <string name="shopping_added_toast">Hinzugefügt: %1$s</string>
     <string name="shopping_duplicate_toast">%1$s ist bereits auf der Liste</string>
     <string name="recurring_added_toast">Wiederkehrende Erinnerung hinzugefügt: %1$s</string>
+    <string name="shopping_voice_not_recognized">Nicht erkannt. Versuche z. B. \"Milch zur Einkaufsliste hinzufügen\"</string>
+    <string name="recurring_voice_not_recognized">Häufigkeit nicht erkannt. Versuche z. B. \"Jeden Tag um 21 Uhr erinnere mich an Nahrungsergänzung\"</string>
+    <string name="add_reminder_title">Neue Erinnerung</string>
 </resources>
