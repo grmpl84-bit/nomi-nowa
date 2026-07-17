@@ -62,6 +62,7 @@ import com.focusremind.app.data.Reminder
 import com.focusremind.app.notification.ReminderAlarmScheduler
 import com.focusremind.app.notification.ReminderNotificationBuilder
 import com.focusremind.app.notification.SoundPlayer
+import com.focusremind.app.speech.RecurringVoiceParser
 import com.focusremind.app.speech.ShoppingListParser
 import com.focusremind.app.speech.TimeParser
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
@@ -325,14 +326,41 @@ fun HomeScreen(onAddReminder: () -> Unit, onOpenSettings: () -> Unit, onOpenHist
                         val existing = shoppingDao.findByName(shoppingItemName)
                         if (existing != null) {
                             android.widget.Toast.makeText(
-                                context, "$shoppingItemName jest już na liście", android.widget.Toast.LENGTH_SHORT
+                                context, context.getString(R.string.shopping_duplicate_toast, shoppingItemName), android.widget.Toast.LENGTH_SHORT
                             ).show()
                         } else {
                             shoppingDao.insert(com.focusremind.app.data.ShoppingItem(name = shoppingItemName))
                             android.widget.Toast.makeText(
-                                context, "Dodano: $shoppingItemName", android.widget.Toast.LENGTH_SHORT
+                                context, context.getString(R.string.shopping_added_toast, shoppingItemName), android.widget.Toast.LENGTH_SHORT
                             ).show()
                         }
+                    }
+                    return
+                }
+
+                // Recurring reminder commands ("codziennie o 21 ...", "every
+                // day at 9pm ...") also have their own dedicated flow —
+                // checked before TimeParser, saved directly with recurrence
+                // set, skipping the one-time review screen entirely.
+                val recurringResult = RecurringVoiceParser.parse(text)
+                if (recurringResult != null) {
+                    scope.launch {
+                        val id = dao.insert(
+                            Reminder(
+                                title = recurringResult.cleanedText,
+                                triggerAt = recurringResult.triggerAt,
+                                isVoiceCreated = true,
+                                originalVoiceText = text,
+                                recurrence = recurringResult.recurrence
+                            )
+                        )
+                        ReminderAlarmScheduler.schedule(
+                            context,
+                            Reminder(id = id, title = recurringResult.cleanedText, triggerAt = recurringResult.triggerAt, recurrence = recurringResult.recurrence)
+                        )
+                        android.widget.Toast.makeText(
+                            context, context.getString(R.string.recurring_added_toast, recurringResult.cleanedText), android.widget.Toast.LENGTH_SHORT
+                        ).show()
                     }
                     return
                 }
@@ -814,7 +842,7 @@ fun HomeScreen(onAddReminder: () -> Unit, onOpenSettings: () -> Unit, onOpenHist
                     selected = false,
                     onClick = onOpenShopping,
                     icon = { Icon(Icons.Default.ShoppingCart, null) },
-                    label = { Text("Zakupy") }
+                    label = { Text(stringResource(R.string.shopping_nav_label)) }
                 )
             }
         },

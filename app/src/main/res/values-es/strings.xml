@@ -109,4 +109,27 @@
     <string name="reminder_saved">¡Guardado!</string>
     <string name="show_setup_guide">Mostrar guía</string>
     <string name="show_setup_guide_desc">Mostrar de nuevo las pantallas de configuración</string>
+    <string name="shopping_nav_label">Compras</string>
+    <string name="shopping_tab_title">Compras</string>
+    <string name="shopping_empty_all">La lista de compras está vacía</string>
+    <string name="shopping_to_buy_header">🛒 Para comprar</string>
+    <string name="shopping_clear_list_btn">Vaciar lista</string>
+    <string name="shopping_nothing_to_buy">Nada que comprar 🎉</string>
+    <string name="shopping_cart_header">✅ Carrito</string>
+    <string name="shopping_cart_empty">El carrito está vacío</string>
+    <string name="shopping_clear_all_btn">Borrar todo</string>
+    <string name="shopping_new_item_title">Nuevo artículo</string>
+    <string name="shopping_item_name_label">Nombre del artículo</string>
+    <string name="shopping_edit_item_title">Editar artículo</string>
+    <string name="shopping_clear_list_confirm_title">¿Vaciar la lista de compras?</string>
+    <string name="shopping_clear_list_confirm_msg">Los artículos del carrito no se modificarán.</string>
+    <string name="shopping_clear_btn">Vaciar</string>
+    <string name="shopping_clear_all_confirm_title">¿Borrar todo?</string>
+    <string name="shopping_clear_all_confirm_msg">Esto elimina tanto la lista de compras como el contenido del carrito.</string>
+    <string name="shopping_edit_desc">Editar</string>
+    <string name="shopping_delete_desc">Eliminar</string>
+    <string name="shopping_undo_desc">Devolver a la lista</string>
+    <string name="shopping_added_toast">Añadido: %1$s</string>
+    <string name="shopping_duplicate_toast">%1$s ya está en la lista</string>
+    <string name="recurring_added_toast">Recordatorio recurrente añadido: %1$s</string>
 </resources>

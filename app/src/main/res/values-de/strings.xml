@@ -109,4 +109,27 @@
     <string name="reminder_saved">Gespeichert!</string>
     <string name="show_setup_guide">Einrichtung anzeigen</string>
     <string name="show_setup_guide_desc">Konfigurationsbildschirme erneut anzeigen</string>
+    <string name="shopping_nav_label">Einkauf</string>
+    <string name="shopping_tab_title">Einkaufen</string>
+    <string name="shopping_empty_all">Die Einkaufsliste ist leer</string>
+    <string name="shopping_to_buy_header">🛒 Zu kaufen</string>
+    <string name="shopping_clear_list_btn">Liste leeren</string>
+    <string name="shopping_nothing_to_buy">Nichts zu kaufen 🎉</string>
+    <string name="shopping_cart_header">✅ Warenkorb</string>
+    <string name="shopping_cart_empty">Der Warenkorb ist leer</string>
+    <string name="shopping_clear_all_btn">Alles löschen</string>
+    <string name="shopping_new_item_title">Neuer Artikel</string>
+    <string name="shopping_item_name_label">Artikelname</string>
+    <string name="shopping_edit_item_title">Artikel bearbeiten</string>
+    <string name="shopping_clear_list_confirm_title">Einkaufsliste leeren?</string>
+    <string name="shopping_clear_list_confirm_msg">Artikel im Warenkorb bleiben unverändert.</string>
+    <string name="shopping_clear_btn">Leeren</string>
+    <string name="shopping_clear_all_confirm_title">Alles löschen?</string>
+    <string name="shopping_clear_all_confirm_msg">Löscht sowohl die Einkaufsliste als auch den Warenkorb.</string>
+    <string name="shopping_edit_desc">Bearbeiten</string>
+    <string name="shopping_delete_desc">Löschen</string>
+    <string name="shopping_undo_desc">Zurück zur Liste</string>
+    <string name="shopping_added_toast">Hinzugefügt: %1$s</string>
+    <string name="shopping_duplicate_toast">%1$s ist bereits auf der Liste</string>
+    <string name="recurring_added_toast">Wiederkehrende Erinnerung hinzugefügt: %1$s</string>
 </resources>

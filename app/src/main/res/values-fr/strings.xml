@@ -109,4 +109,27 @@
     <string name="reminder_saved">Enregistré !</string>
     <string name="show_setup_guide">Afficher le guide</string>
     <string name="show_setup_guide_desc">Afficher à nouveau les écrans de configuration</string>
+    <string name="shopping_nav_label">Courses</string>
+    <string name="shopping_tab_title">Courses</string>
+    <string name="shopping_empty_all">La liste de courses est vide</string>
+    <string name="shopping_to_buy_header">🛒 À acheter</string>
+    <string name="shopping_clear_list_btn">Vider la liste</string>
+    <string name="shopping_nothing_to_buy">Rien à acheter 🎉</string>
+    <string name="shopping_cart_header">✅ Panier</string>
+    <string name="shopping_cart_empty">Le panier est vide</string>
+    <string name="shopping_clear_all_btn">Tout effacer</string>
+    <string name="shopping_new_item_title">Nouvel article</string>
+    <string name="shopping_item_name_label">Nom de l\'article</string>
+    <string name="shopping_edit_item_title">Modifier l\'article</string>
+    <string name="shopping_clear_list_confirm_title">Vider la liste de courses ?</string>
+    <string name="shopping_clear_list_confirm_msg">Les articles du panier resteront inchangés.</string>
+    <string name="shopping_clear_btn">Vider</string>
+    <string name="shopping_clear_all_confirm_title">Tout effacer ?</string>
+    <string name="shopping_clear_all_confirm_msg">Supprime à la fois la liste de courses et le contenu du panier.</string>
+    <string name="shopping_edit_desc">Modifier</string>
+    <string name="shopping_delete_desc">Supprimer</string>
+    <string name="shopping_undo_desc">Remettre dans la liste</string>
+    <string name="shopping_added_toast">Ajouté : %1$s</string>
+    <string name="shopping_duplicate_toast">%1$s est déjà dans la liste</string>
+    <string name="recurring_added_toast">Rappel récurrent ajouté : %1$s</string>
 </resources>

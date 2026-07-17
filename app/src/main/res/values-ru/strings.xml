@@ -109,4 +109,27 @@
     <string name="reminder_saved">Сохранено!</string>
     <string name="show_setup_guide">Показать руководство</string>
     <string name="show_setup_guide_desc">Показать экраны настройки снова</string>
+    <string name="shopping_nav_label">Покупки</string>
+    <string name="shopping_tab_title">Покупки</string>
+    <string name="shopping_empty_all">Список покупок пуст</string>
+    <string name="shopping_to_buy_header">🛒 Купить</string>
+    <string name="shopping_clear_list_btn">Очистить список</string>
+    <string name="shopping_nothing_to_buy">Нечего покупать 🎉</string>
+    <string name="shopping_cart_header">✅ Корзина</string>
+    <string name="shopping_cart_empty">Корзина пуста</string>
+    <string name="shopping_clear_all_btn">Очистить всё</string>
+    <string name="shopping_new_item_title">Новый товар</string>
+    <string name="shopping_item_name_label">Название товара</string>
+    <string name="shopping_edit_item_title">Изменить товар</string>
+    <string name="shopping_clear_list_confirm_title">Очистить список покупок?</string>
+    <string name="shopping_clear_list_confirm_msg">Товары в корзине останутся без изменений.</string>
+    <string name="shopping_clear_btn">Очистить</string>
+    <string name="shopping_clear_all_confirm_title">Очистить всё?</string>
+    <string name="shopping_clear_all_confirm_msg">Удаляет и список покупок, и содержимое корзины.</string>
+    <string name="shopping_edit_desc">Изменить</string>
+    <string name="shopping_delete_desc">Удалить</string>
+    <string name="shopping_undo_desc">Вернуть в список</string>
+    <string name="shopping_added_toast">Добавлено: %1$s</string>
+    <string name="shopping_duplicate_toast">%1$s уже в списке</string>
+    <string name="recurring_added_toast">Добавлено повторяющееся напоминание: %1$s</string>
 </resources>
