@@ -44,6 +44,7 @@ private val BrandGradient = Brush.linearGradient(listOf(Color(0xFF9C27B0), Color
 fun ShoppingListScreen(onOpenHome: () -> Unit, onOpenRecurring: () -> Unit) {
     val context = LocalContext.current
     val dao = FocusRemindApp.instance.database.shoppingDao()
+    val reminderDao = FocusRemindApp.instance.database.reminderDao()
     val scope = rememberCoroutineScope()
 
     val toBuy by dao.getToBuy().collectAsState(initial = emptyList())
@@ -59,26 +60,7 @@ fun ShoppingListScreen(onOpenHome: () -> Unit, onOpenRecurring: () -> Unit) {
     var showClearAllConfirm by remember { mutableStateOf(false) }
 
     val recognizer = rememberVoiceRecognizer { text ->
-        val itemName = ShoppingListParser.parse(text)
-        if (itemName != null) {
-            scope.launch {
-                val existing = dao.findByName(itemName)
-                if (existing != null) {
-                    android.widget.Toast.makeText(
-                        context, context.getString(R.string.shopping_duplicate_toast, itemName), android.widget.Toast.LENGTH_SHORT
-                    ).show()
-                } else {
-                    dao.insert(ShoppingItem(name = itemName))
-                    android.widget.Toast.makeText(
-                        context, context.getString(R.string.shopping_added_toast, itemName), android.widget.Toast.LENGTH_SHORT
-                    ).show()
-                }
-            }
-        } else {
-            android.widget.Toast.makeText(
-                context, context.getString(R.string.shopping_voice_not_recognized), android.widget.Toast.LENGTH_LONG
-            ).show()
-        }
+        handleUniversalVoiceInput(text, context, reminderDao, dao, scope)
     }
 
     Scaffold(

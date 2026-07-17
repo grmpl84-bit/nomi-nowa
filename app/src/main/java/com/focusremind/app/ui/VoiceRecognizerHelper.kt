@@ -32,9 +32,19 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.focusremind.app.R
+import com.focusremind.app.data.Reminder
+import com.focusremind.app.data.ReminderDao
+import com.focusremind.app.data.ShoppingDao
+import com.focusremind.app.data.ShoppingItem
+import com.focusremind.app.notification.ReminderAlarmScheduler
+import com.focusremind.app.speech.RecurringVoiceParser
+import com.focusremind.app.speech.ShoppingListParser
+import com.focusremind.app.speech.TimeParser
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
+import kotlinx.coroutines.launch
 
 /**
  * Small controller handed back by [rememberVoiceRecognizer] so a screen can
@@ -182,5 +192,87 @@ fun VoiceMicFab(controller: VoiceRecognizerController, size: Dp = 96.dp) {
                 Icon(Icons.Default.Mic, null, Modifier.size(size / 2), tint = Color.White)
             }
         }
+    }
+}
+
+/**
+ * Single, shared "what do I do with this recognized speech" handler — used
+ * identically by the mic on ALL THREE tabs (Lista/Cykliczne/Zakupy), so the
+ * mic is genuinely just "the recording button" everywhere: the app decides
+ * where a result belongs based on keywords in what was said, not based on
+ * which screen happened to be open when you pressed it.
+ *
+ * Priority: shopping list command -> recurring reminder command -> normal
+ * one-time reminder (saved with the parsed time, or a safe +15min default
+ * if no time/date could be detected at all — always saves *something* and
+ * always shows a toast, rather than requiring a screen-specific review UI
+ * that only Home/VoiceScreen have).
+ */
+fun handleUniversalVoiceInput(
+    text: String,
+    context: Context,
+    dao: ReminderDao,
+    shoppingDao: ShoppingDao,
+    scope: kotlinx.coroutines.CoroutineScope
+) {
+    val shoppingItemName = ShoppingListParser.parse(text)
+    if (shoppingItemName != null) {
+        scope.launch {
+            val existing = shoppingDao.findByName(shoppingItemName)
+            if (existing != null) {
+                android.widget.Toast.makeText(
+                    context, context.getString(R.string.shopping_duplicate_toast, shoppingItemName), android.widget.Toast.LENGTH_SHORT
+                ).show()
+            } else {
+                shoppingDao.insert(ShoppingItem(name = shoppingItemName))
+                android.widget.Toast.makeText(
+                    context, context.getString(R.string.shopping_added_toast, shoppingItemName), android.widget.Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+        return
+    }
+
+    val recurringResult = RecurringVoiceParser.parse(text)
+    if (recurringResult != null) {
+        scope.launch {
+            val id = dao.insert(
+                Reminder(
+                    title = recurringResult.cleanedText,
+                    triggerAt = recurringResult.triggerAt,
+                    isVoiceCreated = true,
+                    originalVoiceText = text,
+                    recurrence = recurringResult.recurrence
+                )
+            )
+            ReminderAlarmScheduler.schedule(
+                context,
+                Reminder(id = id, title = recurringResult.cleanedText, triggerAt = recurringResult.triggerAt, recurrence = recurringResult.recurrence)
+            )
+            android.widget.Toast.makeText(
+                context, context.getString(R.string.recurring_added_toast, recurringResult.cleanedText), android.widget.Toast.LENGTH_SHORT
+            ).show()
+        }
+        return
+    }
+
+    val parsed = TimeParser.parse(text)
+    val title = if (parsed != null && parsed.cleanedText.isNotBlank()) {
+        parsed.cleanedText.replaceFirstChar { it.uppercase() }
+    } else {
+        text.replaceFirstChar { it.uppercase() }
+    }
+    if (title.isBlank()) return
+
+    val triggerAt = parsed?.triggerAt ?: (System.currentTimeMillis() + 15 * 60_000L)
+    scope.launch {
+        val id = dao.insert(Reminder(title = title, triggerAt = triggerAt, isVoiceCreated = true, originalVoiceText = text))
+        ReminderAlarmScheduler.schedule(context, Reminder(id = id, title = title, triggerAt = triggerAt))
+        val message = if (parsed != null) {
+            context.getString(R.string.reminder_saved)
+        } else {
+            context.getString(R.string.reminder_saved_default_time)
+        }
+        android.widget.Toast.makeText(context, "$message: $title", android.widget.Toast.LENGTH_LONG).show()
     }
 }

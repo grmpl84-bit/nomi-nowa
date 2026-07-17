@@ -135,4 +135,5 @@
     <string name="shopping_voice_not_recognized">Didn\'t catch that. Try e.g. \"Add milk to the shopping list\"</string>
     <string name="recurring_voice_not_recognized">Didn\'t catch the frequency. Try e.g. \"Every day at 9pm remind me about supplements\"</string>
     <string name="add_reminder_title">New reminder</string>
+    <string name="reminder_saved_default_time">Saved (no time detected — edit it on the list)</string>
 </resources>
