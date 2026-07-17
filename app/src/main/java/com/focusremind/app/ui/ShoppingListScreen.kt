@@ -39,7 +39,7 @@ private val BrandGradient = Brush.linearGradient(listOf(Color(0xFF9C27B0), Color
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ShoppingListScreen(onBack: () -> Unit) {
+fun ShoppingListScreen(onOpenHome: () -> Unit, onOpenRecurring: () -> Unit) {
     val dao = FocusRemindApp.instance.database.shoppingDao()
     val scope = rememberCoroutineScope()
 
@@ -70,15 +70,20 @@ fun ShoppingListScreen(onBack: () -> Unit) {
                     .height(110.dp)
             ) {
                 Row(
-                    modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp),
+                    modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, null, modifier = Modifier.size(28.dp), tint = Color.White)
-                    }
                     Text("Zakupy", color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold)
                 }
             }
+        },
+        bottomBar = {
+            AppBottomBar(
+                current = "shopping",
+                onOpenHome = onOpenHome,
+                onOpenRecurring = onOpenRecurring,
+                onOpenShopping = { /* already here */ }
+            )
         },
         floatingActionButton = {
             FloatingActionButton(onClick = { newItemName = ""; showAddDialog = true }) {

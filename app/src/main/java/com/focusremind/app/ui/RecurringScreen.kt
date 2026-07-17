@@ -40,7 +40,7 @@ import java.util.Locale
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RecurringScreen(onBack: () -> Unit) {
+fun RecurringScreen(onOpenHome: () -> Unit, onOpenShopping: () -> Unit) {
     val context = LocalContext.current
     val dao = (context.applicationContext as FocusRemindApp).database.reminderDao()
     val scope = rememberCoroutineScope()
@@ -66,12 +66,9 @@ fun RecurringScreen(onBack: () -> Unit) {
                     .height(110.dp)
             ) {
                 Row(
-                    modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp),
+                    modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, null, tint = Color.White)
-                    }
                     Text(
                         stringResource(R.string.recurring_title),
                         color = Color.White,
@@ -80,6 +77,14 @@ fun RecurringScreen(onBack: () -> Unit) {
                     )
                 }
             }
+        },
+        bottomBar = {
+            AppBottomBar(
+                current = "recurring",
+                onOpenHome = onOpenHome,
+                onOpenRecurring = { /* already here */ },
+                onOpenShopping = onOpenShopping
+            )
         },
         floatingActionButton = {
             FloatingActionButton(onClick = {

@@ -21,22 +21,40 @@ fun AppNavigation(startWithVoice: Boolean = false, skipSplash: Boolean = false) 
         OnboardingScreen(onFinished = { showOnboarding = false })
     } else {
         val nav = rememberNavController()
+
+        // Switching between the three bottom-bar tabs should behave like
+        // standard bottom navigation — no back-stack pile-up, each tab
+        // keeps its own scroll/state when you come back to it.
+        fun navigateToTab(route: String) {
+            nav.navigate(route) {
+                popUpTo("home") { saveState = true }
+                launchSingleTop = true
+                restoreState = true
+            }
+        }
+
         NavHost(nav, startDestination = "home") {
             composable("home") {
                 HomeScreen(
                     onAddReminder = { nav.navigate("voice") },
                     onOpenSettings = { nav.navigate("settings") },
                     onOpenHistory = { nav.navigate("history") },
-                    onOpenRecurring = { nav.navigate("recurring") },
-                    onOpenShopping = { nav.navigate("shopping") },
+                    onOpenRecurring = { navigateToTab("recurring") },
+                    onOpenShopping = { navigateToTab("shopping") },
                     startRecordingImmediately = startWithVoice
                 )
             }
             composable("shopping") {
-                ShoppingListScreen(onBack = { nav.popBackStack() })
+                ShoppingListScreen(
+                    onOpenHome = { navigateToTab("home") },
+                    onOpenRecurring = { navigateToTab("recurring") }
+                )
             }
             composable("recurring") {
-                RecurringScreen(onBack = { nav.popBackStack() })
+                RecurringScreen(
+                    onOpenHome = { navigateToTab("home") },
+                    onOpenShopping = { navigateToTab("shopping") }
+                )
             }
             composable("voice") {
                 VoiceScreen(onBack = { nav.popBackStack() })
