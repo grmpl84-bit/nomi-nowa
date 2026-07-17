@@ -88,7 +88,21 @@ fun rememberVoiceRecognizer(onResult: (String) -> Unit): VoiceRecognizerControll
                 isListening = false
                 onResult(text)
             }
-            override fun onError(error: Int) { isListening = false }
+            override fun onError(error: Int) {
+                isListening = false
+                // Previously silent — surface WHY recognition failed instead
+                // of just quietly resetting, so it's diagnosable.
+                val message = when (error) {
+                    SpeechRecognizer.ERROR_NO_MATCH -> "Nie rozpoznano mowy — spróbuj ponownie"
+                    SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> "Nie wykryto mowy — spróbuj ponownie"
+                    SpeechRecognizer.ERROR_RECOGNIZER_BUSY -> "Rozpoznawanie mowy jest zajęte, spróbuj za chwilę"
+                    SpeechRecognizer.ERROR_AUDIO -> "Błąd nagrywania dźwięku"
+                    SpeechRecognizer.ERROR_NETWORK, SpeechRecognizer.ERROR_NETWORK_TIMEOUT -> "Problem z siecią"
+                    SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> "Brak uprawnień do mikrofonu"
+                    else -> "Błąd rozpoznawania mowy (kod $error)"
+                }
+                android.widget.Toast.makeText(context, message, android.widget.Toast.LENGTH_SHORT).show()
+            }
             override fun onReadyForSpeech(params: Bundle?) {}
             override fun onBeginningOfSpeech() {}
             override fun onRmsChanged(rmsdB: Float) {}
