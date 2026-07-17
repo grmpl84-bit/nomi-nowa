@@ -26,6 +26,7 @@ import com.focusremind.app.R
 import com.focusremind.app.data.Reminder
 import com.focusremind.app.notification.ReminderAlarmScheduler
 import com.focusremind.app.notification.ReminderNotificationBuilder
+import com.focusremind.app.speech.RecurringVoiceParser
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -50,6 +51,34 @@ fun RecurringScreen(onOpenHome: () -> Unit, onOpenShopping: () -> Unit) {
     var newTitle by remember { mutableStateOf("") }
     var newDateTime by remember { mutableStateOf<Long?>(null) }
     var newFrequency by remember { mutableStateOf("DAILY") }
+
+    val recognizer = rememberVoiceRecognizer { text ->
+        val result = RecurringVoiceParser.parse(text)
+        if (result != null) {
+            scope.launch {
+                val id = dao.insert(
+                    Reminder(
+                        title = result.cleanedText,
+                        triggerAt = result.triggerAt,
+                        isVoiceCreated = true,
+                        originalVoiceText = text,
+                        recurrence = result.recurrence
+                    )
+                )
+                ReminderAlarmScheduler.schedule(
+                    context,
+                    Reminder(id = id, title = result.cleanedText, triggerAt = result.triggerAt, recurrence = result.recurrence)
+                )
+                android.widget.Toast.makeText(
+                    context, context.getString(R.string.recurring_added_toast, result.cleanedText), android.widget.Toast.LENGTH_SHORT
+                ).show()
+            }
+        } else {
+            android.widget.Toast.makeText(
+                context, context.getString(R.string.recurring_voice_not_recognized), android.widget.Toast.LENGTH_LONG
+            ).show()
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -87,13 +116,20 @@ fun RecurringScreen(onOpenHome: () -> Unit, onOpenShopping: () -> Unit) {
             )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = {
-                newTitle = ""
-                newDateTime = null
-                newFrequency = "DAILY"
-                showAddDialog = true
-            }) {
-                Icon(Icons.Default.Add, null)
+            Row(
+                Modifier.fillMaxWidth().padding(horizontal = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                FloatingActionButton(onClick = {
+                    newTitle = ""
+                    newDateTime = null
+                    newFrequency = "DAILY"
+                    showAddDialog = true
+                }) {
+                    Icon(Icons.Default.Add, null)
+                }
+                VoiceMicFab(recognizer)
             }
         }
     ) { padding ->

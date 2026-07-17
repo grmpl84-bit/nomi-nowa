@@ -132,4 +132,7 @@
     <string name="shopping_added_toast">Added: %1$s</string>
     <string name="shopping_duplicate_toast">%1$s is already on the list</string>
     <string name="recurring_added_toast">Added recurring reminder: %1$s</string>
+    <string name="shopping_voice_not_recognized">Didn\'t catch that. Try e.g. \"Add milk to the shopping list\"</string>
+    <string name="recurring_voice_not_recognized">Didn\'t catch the frequency. Try e.g. \"Every day at 9pm remind me about supplements\"</string>
+    <string name="add_reminder_title">New reminder</string>
 </resources>

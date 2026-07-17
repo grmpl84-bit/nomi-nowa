@@ -132,4 +132,7 @@
     <string name="shopping_added_toast">Dodano: %1$s</string>
     <string name="shopping_duplicate_toast">%1$s jest już na liście</string>
     <string name="recurring_added_toast">Dodano cykliczne przypomnienie: %1$s</string>
+    <string name="shopping_voice_not_recognized">Nie rozpoznano. Spróbuj np. \"Dodaj mleko do listy zakupów\"</string>
+    <string name="recurring_voice_not_recognized">Nie rozpoznano częstotliwości. Spróbuj np. \"Codziennie o 21 przypomnij mi o suplementach\"</string>
+    <string name="add_reminder_title">Nowe przypomnienie</string>
 </resources>
