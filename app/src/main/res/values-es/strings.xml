@@ -135,4 +135,5 @@
     <string name="shopping_voice_not_recognized">No reconocido. Prueba p. ej. \"Añade leche a la lista de compras\"</string>
     <string name="recurring_voice_not_recognized">Frecuencia no reconocida. Prueba p. ej. \"Cada día a las 21 recuérdame los suplementos\"</string>
     <string name="add_reminder_title">Nuevo recordatorio</string>
+    <string name="reminder_saved_default_time">Guardado (no se detectó la hora — edítalo en la lista)</string>
 </resources>

@@ -44,6 +44,7 @@ import java.util.Locale
 fun RecurringScreen(onOpenHome: () -> Unit, onOpenShopping: () -> Unit) {
     val context = LocalContext.current
     val dao = (context.applicationContext as FocusRemindApp).database.reminderDao()
+    val shoppingDao = FocusRemindApp.instance.database.shoppingDao()
     val scope = rememberCoroutineScope()
     val reminders by dao.getRecurring().collectAsState(initial = emptyList())
 
@@ -53,31 +54,7 @@ fun RecurringScreen(onOpenHome: () -> Unit, onOpenShopping: () -> Unit) {
     var newFrequency by remember { mutableStateOf("DAILY") }
 
     val recognizer = rememberVoiceRecognizer { text ->
-        val result = RecurringVoiceParser.parse(text)
-        if (result != null) {
-            scope.launch {
-                val id = dao.insert(
-                    Reminder(
-                        title = result.cleanedText,
-                        triggerAt = result.triggerAt,
-                        isVoiceCreated = true,
-                        originalVoiceText = text,
-                        recurrence = result.recurrence
-                    )
-                )
-                ReminderAlarmScheduler.schedule(
-                    context,
-                    Reminder(id = id, title = result.cleanedText, triggerAt = result.triggerAt, recurrence = result.recurrence)
-                )
-                android.widget.Toast.makeText(
-                    context, context.getString(R.string.recurring_added_toast, result.cleanedText), android.widget.Toast.LENGTH_SHORT
-                ).show()
-            }
-        } else {
-            android.widget.Toast.makeText(
-                context, context.getString(R.string.recurring_voice_not_recognized), android.widget.Toast.LENGTH_LONG
-            ).show()
-        }
+        handleUniversalVoiceInput(text, context, dao, shoppingDao, scope)
     }
 
     Scaffold(

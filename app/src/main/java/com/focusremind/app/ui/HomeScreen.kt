@@ -319,74 +319,7 @@ fun HomeScreen(onAddReminder: () -> Unit, onOpenSettings: () -> Unit, onOpenHist
                 val text = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull() ?: ""
                 recognizedText = text
                 isListening = false
-
-                // Shopping list commands have no time/date at all — check
-                // for them FIRST, before TimeParser even runs. This is the
-                // main mic entry point (home screen FAB + widget), so this
-                // check must live HERE, not only in the separate VoiceScreen.
-                val shoppingItemName = ShoppingListParser.parse(text)
-                if (shoppingItemName != null) {
-                    scope.launch {
-                        val existing = shoppingDao.findByName(shoppingItemName)
-                        if (existing != null) {
-                            android.widget.Toast.makeText(
-                                context, context.getString(R.string.shopping_duplicate_toast, shoppingItemName), android.widget.Toast.LENGTH_SHORT
-                            ).show()
-                        } else {
-                            shoppingDao.insert(com.focusremind.app.data.ShoppingItem(name = shoppingItemName))
-                            android.widget.Toast.makeText(
-                                context, context.getString(R.string.shopping_added_toast, shoppingItemName), android.widget.Toast.LENGTH_SHORT
-                            ).show()
-                        }
-                    }
-                    return
-                }
-
-                // Recurring reminder commands ("codziennie o 21 ...", "every
-                // day at 9pm ...") also have their own dedicated flow —
-                // checked before TimeParser, saved directly with recurrence
-                // set, skipping the one-time review screen entirely.
-                val recurringResult = RecurringVoiceParser.parse(text)
-                if (recurringResult != null) {
-                    scope.launch {
-                        val id = dao.insert(
-                            Reminder(
-                                title = recurringResult.cleanedText,
-                                triggerAt = recurringResult.triggerAt,
-                                isVoiceCreated = true,
-                                originalVoiceText = text,
-                                recurrence = recurringResult.recurrence
-                            )
-                        )
-                        ReminderAlarmScheduler.schedule(
-                            context,
-                            Reminder(id = id, title = recurringResult.cleanedText, triggerAt = recurringResult.triggerAt, recurrence = recurringResult.recurrence)
-                        )
-                        android.widget.Toast.makeText(
-                            context, context.getString(R.string.recurring_added_toast, recurringResult.cleanedText), android.widget.Toast.LENGTH_SHORT
-                        ).show()
-                    }
-                    return
-                }
-
-                val parsed = TimeParser.parse(text)
-                parsedResult = parsed
-                editableTitle = if (parsed != null && parsed.cleanedText.isNotBlank()) {
-                    parsed.cleanedText.replaceFirstChar { it.uppercase() }
-                } else {
-                    text.replaceFirstChar { it.uppercase() }
-                }
-
-                // AUTO-SAVE: If time was parsed from voice, save immediately without review
-                if (parsed != null && editableTitle.isNotBlank()) {
-                    scope.launch {
-                        val id = dao.insert(Reminder(title = editableTitle, triggerAt = parsed.triggerAt, isVoiceCreated = true, originalVoiceText = text))
-                        ReminderAlarmScheduler.schedule(context, Reminder(id = id, title = editableTitle, triggerAt = parsed.triggerAt))
-                    }
-                } else {
-                    // No time detected — show review screen so user can pick time
-                    showResult = true
-                }
+                handleUniversalVoiceInput(text, context, dao, shoppingDao, scope)
             }
             override fun onPartialResults(partial: Bundle?) {
                 recognizedText = partial?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull() ?: ""

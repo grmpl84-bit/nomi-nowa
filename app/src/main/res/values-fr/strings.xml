@@ -135,4 +135,5 @@
     <string name="shopping_voice_not_recognized">Non reconnu. Essayez par ex. \"Ajoute du lait à la liste de courses\"</string>
     <string name="recurring_voice_not_recognized">Fréquence non reconnue. Essayez par ex. \"Tous les jours à 21h rappelle-moi les compléments\"</string>
     <string name="add_reminder_title">Nouveau rappel</string>
+    <string name="reminder_saved_default_time">Enregistré (heure non détectée — modifiez-le dans la liste)</string>
 </resources>
