@@ -137,16 +137,42 @@ class AlarmReceiver : BroadcastReceiver() {
             val pendingResult = goAsync()
             CoroutineScope(Dispatchers.IO).launch {
                 try {
-                    val nextTrigger = ReminderAlarmScheduler.nextTriggerTime(triggerAt, recurrence)
-                    FocusRemindApp.instance.database.reminderDao().snooze(reminderId, nextTrigger)
+                    val dao = FocusRemindApp.instance.database.reminderDao()
+                    val current = dao.getById(reminderId)
+                    val anchor = current?.anchorTime ?: triggerAt
+                    // Only a genuine cycle completion (this firing IS the
+                    // anchor time, give or take alarm-timing slop) advances
+                    // the schedule. A snoozed re-fire has a triggerAt that no
+                    // longer matches the anchor — because the anchor was
+                    // already advanced the moment the real cycle fired — so
+                    // it must NOT advance again; it just needs the already-
+                    // correct next alarm restored (the snooze's own
+                    // rescheduling overwrote it with the temporary snoozed time).
+                    val isGenuineCycleFire = kotlin.math.abs(triggerAt - anchor) < 60_000L
+                    val nextTrigger = if (isGenuineCycleFire) {
+                        ReminderAlarmScheduler.nextTriggerTime(anchor, recurrence).also {
+                            dao.advanceRecurrence(reminderId, it)
+                        }
+                    } else {
+                        // Safety net: if a very long snooze pushed us past the
+                        // restored anchor time already, keep advancing until
+                        // it's actually in the future instead of scheduling
+                        // an alarm in the past.
+                        var restored = anchor
+                        while (restored <= System.currentTimeMillis()) {
+                            restored = ReminderAlarmScheduler.nextTriggerTime(restored, recurrence)
+                        }
+                        if (restored != anchor) dao.advanceRecurrence(reminderId, restored)
+                        restored
+                    }
                     // Reset the "already fired" flag so the new cycle's backup Worker works correctly
                     context.getSharedPreferences("nomi_alarm_flags", Context.MODE_PRIVATE)
                         .edit().putBoolean("fired_$reminderId", false).apply()
                     ReminderAlarmScheduler.schedule(
                         context,
-                        Reminder(id = reminderId, title = title, triggerAt = nextTrigger, recurrence = recurrence)
+                        Reminder(id = reminderId, title = title, triggerAt = nextTrigger, recurrence = recurrence, anchorTime = nextTrigger)
                     )
-                    Log.d(TAG, "Recurring reminder $reminderId ($recurrence) rescheduled for $nextTrigger")
+                    Log.d(TAG, "Recurring reminder $reminderId ($recurrence) -> next=$nextTrigger (genuineCycle=$isGenuineCycleFire)")
                 } catch (e: Exception) {
                     Log.e(TAG, "Failed to reschedule recurring reminder $reminderId", e)
                 } finally {

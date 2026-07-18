@@ -106,12 +106,13 @@ fun VoiceScreen(onBack: () -> Unit) {
                                 triggerAt = recurringResult.triggerAt,
                                 isVoiceCreated = true,
                                 originalVoiceText = text,
-                                recurrence = recurringResult.recurrence
+                                recurrence = recurringResult.recurrence,
+                                anchorTime = recurringResult.triggerAt
                             )
                         )
                         ReminderAlarmScheduler.schedule(
                             context,
-                            Reminder(id = id, title = recurringResult.cleanedText, triggerAt = recurringResult.triggerAt, recurrence = recurringResult.recurrence)
+                            Reminder(id = id, title = recurringResult.cleanedText, triggerAt = recurringResult.triggerAt, recurrence = recurringResult.recurrence, anchorTime = recurringResult.triggerAt)
                         )
                         android.widget.Toast.makeText(
                             context, context.getString(R.string.recurring_added_toast, recurringResult.cleanedText), android.widget.Toast.LENGTH_SHORT

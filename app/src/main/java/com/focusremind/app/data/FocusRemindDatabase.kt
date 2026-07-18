@@ -15,6 +15,12 @@ data class Reminder(
     val originalVoiceText: String? = null,
     val photoUri: String? = null,
     val recurrence: String? = null, // null = one-time, "DAILY", "WEEKLY"
+    // The "canonical" scheduled time for a recurring reminder's cycle —
+    // separate from triggerAt so that snoozing (+15/+30 min) only delays
+    // THIS instance without permanently shifting the whole recurring
+    // schedule. Only advanced when a cycle genuinely completes (the alarm
+    // fires normally), never touched by a snooze. Null for one-time reminders.
+    val anchorTime: Long? = null,
     val createdAt: Long = System.currentTimeMillis()
 )
 
@@ -51,6 +57,12 @@ interface ReminderDao {
 
     @Query("UPDATE reminders SET triggerAt = :newTime WHERE id = :id")
     suspend fun snooze(id: Long, newTime: Long)
+
+    // Used ONLY when a recurring reminder's cycle genuinely advances (the
+    // alarm fired normally) — updates both triggerAt AND the anchor, unlike
+    // snooze() which deliberately leaves the anchor untouched.
+    @Query("UPDATE reminders SET triggerAt = :newTime, anchorTime = :newTime WHERE id = :id")
+    suspend fun advanceRecurrence(id: Long, newTime: Long)
 
     @Query("UPDATE reminders SET title = :title, triggerAt = :triggerAt WHERE id = :id")
     suspend fun update(id: Long, title: String, triggerAt: Long)
@@ -98,7 +110,7 @@ interface ShoppingDao {
     suspend fun clearAll()
 }
 
-@Database(entities = [Reminder::class, ShoppingItem::class], version = 6)
+@Database(entities = [Reminder::class, ShoppingItem::class], version = 7)
 abstract class FocusRemindDatabase : RoomDatabase() {
     abstract fun reminderDao(): ReminderDao
     abstract fun shoppingDao(): ShoppingDao
