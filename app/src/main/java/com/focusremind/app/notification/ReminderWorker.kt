@@ -5,9 +5,6 @@ import android.app.NotificationManager
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
-import android.os.VibrationEffect
-import android.os.Vibrator
-import android.os.VibratorManager
 import android.util.Log
 import androidx.core.content.ContextCompat
 import androidx.work.CoroutineWorker
@@ -100,9 +97,6 @@ class ReminderWorker(
             }
         }
 
-        val prefs = context.getSharedPreferences("focusremind_settings", Context.MODE_PRIVATE)
-        val vibrationEnabled = prefs.getBoolean("vibration_enabled", true)
-
         val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
         // Same amber, always-visible-buttons notification as AlarmReceiver
@@ -110,18 +104,13 @@ class ReminderWorker(
         nm.notify(reminderId.toInt(), notification)
         Log.d(TAG, "Backup notification shown for reminder $reminderId")
 
-        // Vibrate
-        if (vibrationEnabled) {
-            try {
-                val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                    (context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager).defaultVibrator
-                } else {
-                    @Suppress("DEPRECATION")
-                    context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
-                }
-                vibrator.vibrate(VibrationEffect.createWaveform(longArrayOf(0, 500, 200, 500, 200, 500), -1))
-                SoundPlayer.register(reminderId, vibrator = vibrator)
-            } catch (_: Exception) {}
+        // Hand off to the same foreground service AlarmReceiver uses — this
+        // path previously played only a short one-shot vibration, with no
+        // sound at all, and no protection from background execution limits.
+        val serviceIntent = android.content.Intent(context, AlarmSoundService::class.java).apply {
+            putExtra(AlarmSoundService.EXTRA_REMINDER_ID, reminderId)
+            putExtra(AlarmSoundService.EXTRA_TITLE, title)
         }
+        ContextCompat.startForegroundService(context, serviceIntent)
     }
 }

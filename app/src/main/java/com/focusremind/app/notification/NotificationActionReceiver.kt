@@ -25,11 +25,18 @@ class NotificationActionReceiver : BroadcastReceiver() {
 
         Log.d(TAG, "Action ${intent.action} for reminder $reminderId")
 
-        // Stop alarm sound and vibration IMMEDIATELY — for THIS reminder
-        // specifically, not whatever the shared slot last happened to hold.
-        SoundPlayer.stop(reminderId)
+        // Tell AlarmSoundService to stop THIS reminder's sound/vibration and
+        // remove itself from the foreground — harmless if the service isn't
+        // actually running for this reminder (e.g. it fired via the backup
+        // Worker path instead), Android just starts-and-immediately-stops it.
+        val stopIntent = Intent(context, AlarmSoundService::class.java).apply {
+            action = AlarmSoundService.ACTION_STOP
+            putExtra(AlarmSoundService.EXTRA_REMINDER_ID, reminderId)
+        }
+        context.startService(stopIntent)
 
-        // Dismiss notification
+        // Dismiss notification — safety net in case the service wasn't
+        // running for this reminder (backup Worker path posts directly).
         val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         nm.cancel(reminderId.toInt())
 
