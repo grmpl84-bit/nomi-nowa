@@ -174,7 +174,7 @@ fun VoiceMicFab(controller: VoiceRecognizerController, size: Dp = 96.dp) {
                 modifier = Modifier.size(size),
                 shape = CircleShape,
                 color = MaterialTheme.colorScheme.error,
-                shadowElevation = 4.dp
+                shadowElevation = 6.dp
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(Icons.Default.Mic, null, Modifier.size(size / 2), tint = MaterialTheme.colorScheme.onError)
@@ -184,7 +184,7 @@ fun VoiceMicFab(controller: VoiceRecognizerController, size: Dp = 96.dp) {
             Box(
                 modifier = Modifier
                     .size(size)
-                    .shadow(4.dp, CircleShape)
+                    .shadow(6.dp, CircleShape)
                     .clip(CircleShape)
                     .background(Brush.linearGradient(listOf(Color(0xFF9C27B0), Color(0xFF7C4DFF), Color(0xFF00BCD4)))),
                 contentAlignment = Alignment.Center
