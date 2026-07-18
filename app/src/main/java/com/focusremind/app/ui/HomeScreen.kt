@@ -951,7 +951,7 @@ fun HomeScreen(onAddReminder: () -> Unit, onOpenSettings: () -> Unit, onOpenHist
                             Icon(
                                 Icons.Default.Mic,
                                 stringResource(R.string.tap_mic),
-                                Modifier.size(36.dp),
+                                Modifier.size(48.dp),
                                 tint = MaterialTheme.colorScheme.onError
                             )
                         }
@@ -970,7 +970,7 @@ fun HomeScreen(onAddReminder: () -> Unit, onOpenSettings: () -> Unit, onOpenHist
                         Icon(
                             Icons.Default.Mic,
                             stringResource(R.string.tap_mic),
-                            Modifier.size(36.dp),
+                            Modifier.size(48.dp),
                             tint = Color.White
                         )
                     }
