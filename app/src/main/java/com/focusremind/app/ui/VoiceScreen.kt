@@ -86,6 +86,7 @@ fun VoiceScreen(onBack: () -> Unit) {
                             ).show()
                         } else {
                             shoppingDao.insert(com.focusremind.app.data.ShoppingItem(name = shoppingItemName))
+                            FlightBus.destination = "shopping"
                             android.widget.Toast.makeText(
                                 context, context.getString(R.string.shopping_added_toast, shoppingItemName), android.widget.Toast.LENGTH_SHORT
                             ).show()
@@ -114,6 +115,7 @@ fun VoiceScreen(onBack: () -> Unit) {
                             context,
                             Reminder(id = id, title = recurringResult.cleanedText, triggerAt = recurringResult.triggerAt, recurrence = recurringResult.recurrence, anchorTime = recurringResult.triggerAt)
                         )
+                        FlightBus.destination = "recurring"
                         android.widget.Toast.makeText(
                             context, context.getString(R.string.recurring_added_toast, recurringResult.cleanedText), android.widget.Toast.LENGTH_SHORT
                         ).show()
@@ -319,6 +321,7 @@ fun VoiceScreen(onBack: () -> Unit) {
                                 ))
                                 // CRITICAL: Schedule the alarm! Without this, notification will never fire.
                                 ReminderAlarmScheduler.schedule(context, Reminder(id = id, title = editableTitle, triggerAt = triggerAt))
+                                FlightBus.destination = "home"
                                 onBack()
                             }
                         },

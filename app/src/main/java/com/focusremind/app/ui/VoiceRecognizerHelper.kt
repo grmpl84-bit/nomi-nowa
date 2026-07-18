@@ -225,6 +225,7 @@ fun handleUniversalVoiceInput(
                 ).show()
             } else {
                 shoppingDao.insert(ShoppingItem(name = shoppingItemName))
+                FlightBus.destination = "shopping"
                 android.widget.Toast.makeText(
                     context, context.getString(R.string.shopping_added_toast, shoppingItemName), android.widget.Toast.LENGTH_SHORT
                 ).show()
@@ -250,6 +251,7 @@ fun handleUniversalVoiceInput(
                 context,
                 Reminder(id = id, title = recurringResult.cleanedText, triggerAt = recurringResult.triggerAt, recurrence = recurringResult.recurrence, anchorTime = recurringResult.triggerAt)
             )
+            FlightBus.destination = "recurring"
             android.widget.Toast.makeText(
                 context, context.getString(R.string.recurring_added_toast, recurringResult.cleanedText), android.widget.Toast.LENGTH_SHORT
             ).show()
@@ -269,6 +271,7 @@ fun handleUniversalVoiceInput(
     scope.launch {
         val id = dao.insert(Reminder(title = title, triggerAt = triggerAt, isVoiceCreated = true, originalVoiceText = text))
         ReminderAlarmScheduler.schedule(context, Reminder(id = id, title = title, triggerAt = triggerAt))
+        FlightBus.destination = "home"
         val message = if (parsed != null) {
             context.getString(R.string.reminder_saved)
         } else {
