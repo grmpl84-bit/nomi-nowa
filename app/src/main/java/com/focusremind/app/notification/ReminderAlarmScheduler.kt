@@ -147,6 +147,11 @@ object ReminderAlarmScheduler {
     fun nextTriggerTime(previousTriggerAt: Long, recurrence: String): Long = when (recurrence) {
         "DAILY" -> previousTriggerAt + TimeUnit.DAYS.toMillis(1)
         "WEEKLY" -> previousTriggerAt + TimeUnit.DAYS.toMillis(7)
+        "BIWEEKLY" -> previousTriggerAt + TimeUnit.DAYS.toMillis(14)
+        "MONTHLY" -> java.util.Calendar.getInstance().apply {
+            timeInMillis = previousTriggerAt
+            add(java.util.Calendar.MONTH, 1)
+        }.timeInMillis
         else -> previousTriggerAt
     }
 

@@ -173,6 +173,18 @@ fun RecurringScreen(onOpenHome: () -> Unit, onOpenShopping: () -> Unit) {
                             label = { Text(stringResource(R.string.recurrence_weekly)) }
                         )
                     }
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        FilterChip(
+                            selected = newFrequency == "BIWEEKLY",
+                            onClick = { newFrequency = "BIWEEKLY"; newDateTime = null },
+                            label = { Text(stringResource(R.string.recurrence_biweekly)) }
+                        )
+                        FilterChip(
+                            selected = newFrequency == "MONTHLY",
+                            onClick = { newFrequency = "MONTHLY"; newDateTime = null },
+                            label = { Text(stringResource(R.string.recurrence_monthly)) }
+                        )
+                    }
 
                     val formatted = remember(newDateTime, newFrequency) {
                         newDateTime?.let {
@@ -275,8 +287,13 @@ private fun RecurringCard(reminder: Reminder, onDelete: () -> Unit, onChangeFreq
                         Icon(Icons.Default.Repeat, null, Modifier.size(16.dp))
                         Spacer(Modifier.width(6.dp))
                         Text(
-                            if (reminder.recurrence == "DAILY") stringResource(R.string.recurrence_daily)
-                            else stringResource(R.string.recurrence_weekly)
+                            when (reminder.recurrence) {
+                                "DAILY" -> stringResource(R.string.recurrence_daily)
+                                "WEEKLY" -> stringResource(R.string.recurrence_weekly)
+                                "BIWEEKLY" -> stringResource(R.string.recurrence_biweekly)
+                                "MONTHLY" -> stringResource(R.string.recurrence_monthly)
+                                else -> stringResource(R.string.recurrence_weekly)
+                            }
                         )
                     }
                     DropdownMenu(expanded = showFreqMenu, onDismissRequest = { showFreqMenu = false }) {
@@ -287,6 +304,14 @@ private fun RecurringCard(reminder: Reminder, onDelete: () -> Unit, onChangeFreq
                         DropdownMenuItem(
                             text = { Text(stringResource(R.string.recurrence_weekly)) },
                             onClick = { onChangeFrequency("WEEKLY"); showFreqMenu = false }
+                        )
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.recurrence_biweekly)) },
+                            onClick = { onChangeFrequency("BIWEEKLY"); showFreqMenu = false }
+                        )
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.recurrence_monthly)) },
+                            onClick = { onChangeFrequency("MONTHLY"); showFreqMenu = false }
                         )
                     }
                 }

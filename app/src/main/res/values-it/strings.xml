@@ -136,4 +136,6 @@
     <string name="recurring_voice_not_recognized">Frequenza non riconosciuta. Prova ad es. \"Ogni giorno alle 21 ricordami gli integratori\"</string>
     <string name="add_reminder_title">Nuovo promemoria</string>
     <string name="reminder_saved_default_time">Salvato (ora non rilevata — modificalo nella lista)</string>
+    <string name="recurrence_biweekly">Ogni 2 settimane</string>
+    <string name="recurrence_monthly">Ogni mese</string>
 </resources>
