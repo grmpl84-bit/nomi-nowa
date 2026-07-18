@@ -60,14 +60,28 @@ class ReminderWorker(
         // didn't), we're responsible for scheduling the next occurrence too.
         if (recurrence != null) {
             try {
-                val nextTrigger = ReminderAlarmScheduler.nextTriggerTime(triggerAt, recurrence)
-                FocusRemindApp.instance.database.reminderDao().snooze(reminderId, nextTrigger)
+                val dao = FocusRemindApp.instance.database.reminderDao()
+                val current = dao.getById(reminderId)
+                val anchor = current?.anchorTime ?: triggerAt
+                val isGenuineCycleFire = kotlin.math.abs(triggerAt - anchor) < 60_000L
+                val nextTrigger = if (isGenuineCycleFire) {
+                    ReminderAlarmScheduler.nextTriggerTime(anchor, recurrence).also {
+                        dao.advanceRecurrence(reminderId, it)
+                    }
+                } else {
+                    var restored = anchor
+                    while (restored <= System.currentTimeMillis()) {
+                        restored = ReminderAlarmScheduler.nextTriggerTime(restored, recurrence)
+                    }
+                    if (restored != anchor) dao.advanceRecurrence(reminderId, restored)
+                    restored
+                }
                 alarmFlags.edit().putBoolean("fired_$reminderId", false).apply()
                 ReminderAlarmScheduler.schedule(
                     context,
-                    Reminder(id = reminderId, title = title, triggerAt = nextTrigger, recurrence = recurrence)
+                    Reminder(id = reminderId, title = title, triggerAt = nextTrigger, recurrence = recurrence, anchorTime = nextTrigger)
                 )
-                Log.d(TAG, "Recurring reminder $reminderId ($recurrence) rescheduled for $nextTrigger (via backup)")
+                Log.d(TAG, "Recurring reminder $reminderId ($recurrence) -> next=$nextTrigger (via backup, genuineCycle=$isGenuineCycleFire)")
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to reschedule recurring reminder $reminderId", e)
             }

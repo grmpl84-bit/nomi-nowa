@@ -229,11 +229,11 @@ fun RecurringScreen(onOpenHome: () -> Unit, onOpenShopping: () -> Unit) {
                         val trigger = newDateTime ?: return@Button
                         scope.launch {
                             val id = dao.insert(
-                                Reminder(title = newTitle, triggerAt = trigger, recurrence = newFrequency)
+                                Reminder(title = newTitle, triggerAt = trigger, recurrence = newFrequency, anchorTime = trigger)
                             )
                             ReminderAlarmScheduler.schedule(
                                 context,
-                                Reminder(id = id, title = newTitle, triggerAt = trigger, recurrence = newFrequency)
+                                Reminder(id = id, title = newTitle, triggerAt = trigger, recurrence = newFrequency, anchorTime = trigger)
                             )
                         }
                         showAddDialog = false
