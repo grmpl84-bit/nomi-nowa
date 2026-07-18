@@ -86,8 +86,10 @@ class AlarmReceiver : BroadcastReceiver() {
                     prepare()
                     start()
                 }
-                // Save player reference so NotificationActionReceiver can stop it
-                SoundPlayer.currentPlayer = player
+                // Save player reference (keyed by this reminder's ID) so
+                // NotificationActionReceiver can stop THIS one specifically,
+                // without risk of clobbering/being clobbered by another alarm.
+                SoundPlayer.register(reminderId, player = player)
                 Log.d(TAG, "Playing sound (looping): $soundUri at volume $volume")
             } catch (e: Exception) {
                 Log.w(TAG, "Failed to play custom sound, trying default", e)
@@ -104,7 +106,7 @@ class AlarmReceiver : BroadcastReceiver() {
                         prepare()
                         start()
                     }
-                    SoundPlayer.currentPlayer = player
+                    SoundPlayer.register(reminderId, player = player)
                 } catch (e2: Exception) {
                     Log.e(TAG, "Default sound also failed", e2)
                 }
@@ -123,7 +125,7 @@ class AlarmReceiver : BroadcastReceiver() {
                 // Repeating vibration: 800ms on, 400ms off, loops from index 0
                 val pattern = longArrayOf(0, 800, 400, 800, 400, 800)
                 vibrator.vibrate(VibrationEffect.createWaveform(pattern, 0)) // 0 = repeat from start
-                SoundPlayer.currentVibrator = vibrator
+                SoundPlayer.register(reminderId, vibrator = vibrator)
                 Log.d(TAG, "Vibration started (repeating)")
             } catch (e: Exception) {
                 Log.w(TAG, "Vibration failed", e)

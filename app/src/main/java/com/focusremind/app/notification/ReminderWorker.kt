@@ -120,6 +120,7 @@ class ReminderWorker(
                     context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
                 }
                 vibrator.vibrate(VibrationEffect.createWaveform(longArrayOf(0, 500, 200, 500, 200, 500), -1))
+                SoundPlayer.register(reminderId, vibrator = vibrator)
             } catch (_: Exception) {}
         }
     }

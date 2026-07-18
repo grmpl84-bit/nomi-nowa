@@ -25,8 +25,9 @@ class NotificationActionReceiver : BroadcastReceiver() {
 
         Log.d(TAG, "Action ${intent.action} for reminder $reminderId")
 
-        // Stop alarm sound and vibration IMMEDIATELY
-        SoundPlayer.stop()
+        // Stop alarm sound and vibration IMMEDIATELY — for THIS reminder
+        // specifically, not whatever the shared slot last happened to hold.
+        SoundPlayer.stop(reminderId)
 
         // Dismiss notification
         val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager

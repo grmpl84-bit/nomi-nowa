@@ -1048,7 +1048,7 @@ fun HomeScreen(onAddReminder: () -> Unit, onOpenSettings: () -> Unit, onOpenHist
                                 // using the notification), stop it here too —
                                 // previously only the notification's own buttons
                                 // could do this.
-                                SoundPlayer.stop()
+                                SoundPlayer.stop(reminder.id)
                                 (context.getSystemService(Context.NOTIFICATION_SERVICE) as android.app.NotificationManager)
                                     .cancel(reminder.id.toInt())
                             }
@@ -1068,7 +1068,7 @@ fun HomeScreen(onAddReminder: () -> Unit, onOpenSettings: () -> Unit, onOpenHist
                             scope.launch {
                                 dao.delete(reminder.id)
                                 ReminderAlarmScheduler.cancel(context, reminder.id)
-                                SoundPlayer.stop()
+                                SoundPlayer.stop(reminder.id)
                                 (context.getSystemService(Context.NOTIFICATION_SERVICE) as android.app.NotificationManager)
                                     .cancel(reminder.id.toInt())
                             }

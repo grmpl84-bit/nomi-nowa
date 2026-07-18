@@ -5,26 +5,44 @@ import android.os.Vibrator
 import android.util.Log
 
 /**
- * Holds reference to currently playing alarm sound and vibrator.
- * This allows NotificationActionReceiver to stop them when user
- * taps "Gotowe" or "+5 min".
+ * Holds references to currently playing alarm sounds/vibrations — keyed by
+ * reminder ID, NOT a single shared slot. A single global slot meant that if
+ * a second alarm fired (a different reminder, or the same one's next
+ * recurring cycle) while a first one was still ringing, the second one's
+ * sound/vibration would silently overwrite the first one's reference —
+ * orphaning it with literally no way to stop it from the app anymore (the
+ * "Done" button on the FIRST notification would stop the SECOND alarm's
+ * sound instead, since that's all the singleton remembered).
  */
 object SoundPlayer {
-    var currentPlayer: MediaPlayer? = null
-    var currentVibrator: Vibrator? = null
+    private val players = mutableMapOf<Long, MediaPlayer>()
+    private val vibrators = mutableMapOf<Long, Vibrator>()
 
-    fun stop() {
+    fun register(reminderId: Long, player: MediaPlayer? = null, vibrator: Vibrator? = null) {
+        player?.let { players[reminderId] = it }
+        vibrator?.let { vibrators[reminderId] = it }
+    }
+
+    fun stop(reminderId: Long) {
         try {
-            currentPlayer?.stop()
-            currentPlayer?.release()
+            players[reminderId]?.let {
+                it.stop()
+                it.release()
+            }
         } catch (_: Exception) {}
-        currentPlayer = null
+        players.remove(reminderId)
 
         try {
-            currentVibrator?.cancel()
+            vibrators[reminderId]?.cancel()
         } catch (_: Exception) {}
-        currentVibrator = null
+        vibrators.remove(reminderId)
 
-        Log.d("SoundPlayer", "Sound and vibration stopped")
+        Log.d("SoundPlayer", "Sound and vibration stopped for reminder $reminderId")
+    }
+
+    /** Stops every currently-tracked alarm — used only as a last-resort cleanup. */
+    fun stopAll() {
+        val ids = (players.keys + vibrators.keys).toSet()
+        ids.forEach { stop(it) }
     }
 }
