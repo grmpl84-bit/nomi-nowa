@@ -136,4 +136,6 @@
     <string name="recurring_voice_not_recognized">Nie rozpoznano częstotliwości. Spróbuj np. \"Codziennie o 21 przypomnij mi o suplementach\"</string>
     <string name="add_reminder_title">Nowe przypomnienie</string>
     <string name="reminder_saved_default_time">Zapisano (bez rozpoznanej godziny — edytuj na liście)</string>
+    <string name="recurrence_biweekly">Co 2 tygodnie</string>
+    <string name="recurrence_monthly">Co miesiąc</string>
 </resources>

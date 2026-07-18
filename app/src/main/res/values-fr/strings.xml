@@ -136,4 +136,6 @@
     <string name="recurring_voice_not_recognized">Fréquence non reconnue. Essayez par ex. \"Tous les jours à 21h rappelle-moi les compléments\"</string>
     <string name="add_reminder_title">Nouveau rappel</string>
     <string name="reminder_saved_default_time">Enregistré (heure non détectée — modifiez-le dans la liste)</string>
+    <string name="recurrence_biweekly">Toutes les 2 semaines</string>
+    <string name="recurrence_monthly">Tous les mois</string>
 </resources>

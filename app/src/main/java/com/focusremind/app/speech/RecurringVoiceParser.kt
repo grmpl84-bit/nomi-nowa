@@ -9,8 +9,9 @@ import java.util.Calendar
  * TimeParser, short-circuits the whole one-time-reminder flow when matched.
  *
  * Deliberately narrow scope, matching exactly what the database supports
- * today (DAILY / WEEKLY) — no "every other day", "twice a day", or "every
- * weekday", since those would need a different data model entirely.
+ * today (DAILY / WEEKLY / BIWEEKLY / MONTHLY) — no "every other day",
+ * "twice a day", or "every weekday", since those would need a different
+ * data model entirely.
  *
  * Polish + English for now.
  */
@@ -129,6 +130,20 @@ object RecurringVoiceParser {
                 if (content.isNotBlank()) return Result(triggerForDaily(h, min), capitalize(content), "WEEKLY")
             }
         }
+        // "co 2 tygodnie" / "co dwa tygodnie" o [godzina] [treść] -> BIWEEKLY
+        Regex("""^co\s+(?:2|dwa)\s+tygodnie\s+o\s+(\S+)\s+(.+)$""").find(lower)?.let { m ->
+            parseClockTime(m.groupValues[1])?.let { (h, min) ->
+                val content = m.groupValues[2]
+                if (content.isNotBlank()) return Result(triggerForDaily(h, min), capitalize(content), "BIWEEKLY")
+            }
+        }
+        // "co miesiąc o [godzina] [treść]" -> MONTHLY
+        Regex("""^co\s+miesiąc\s+o\s+(\S+)\s+(.+)$""").find(lower)?.let { m ->
+            parseClockTime(m.groupValues[1])?.let { (h, min) ->
+                val content = m.groupValues[2]
+                if (content.isNotBlank()) return Result(triggerForDaily(h, min), capitalize(content), "MONTHLY")
+            }
+        }
         return null
     }
 
@@ -161,6 +176,26 @@ object RecurringVoiceParser {
             parseClockTime(m.groupValues[1])?.let { (h, min) ->
                 val content = m.groupValues[2]
                 if (content.isNotBlank()) return Result(triggerForDaily(h, min), capitalize(content), "WEEKLY")
+            }
+        }
+        // "every 2 weeks" / "every two weeks" / "every other week" at [time] [content] -> BIWEEKLY
+        Regex("""^every\s+(?:2|two)\s+weeks\s+at\s+(\S+)\s+(.+)$""").find(lower)?.let { m ->
+            parseClockTime(m.groupValues[1])?.let { (h, min) ->
+                val content = m.groupValues[2]
+                if (content.isNotBlank()) return Result(triggerForDaily(h, min), capitalize(content), "BIWEEKLY")
+            }
+        }
+        Regex("""^every\s+other\s+week\s+at\s+(\S+)\s+(.+)$""").find(lower)?.let { m ->
+            parseClockTime(m.groupValues[1])?.let { (h, min) ->
+                val content = m.groupValues[2]
+                if (content.isNotBlank()) return Result(triggerForDaily(h, min), capitalize(content), "BIWEEKLY")
+            }
+        }
+        // "every month at [time] [content]" / "monthly at [time] [content]" -> MONTHLY
+        Regex("""^(?:every\s+month|monthly)\s+at\s+(\S+)\s+(.+)$""").find(lower)?.let { m ->
+            parseClockTime(m.groupValues[1])?.let { (h, min) ->
+                val content = m.groupValues[2]
+                if (content.isNotBlank()) return Result(triggerForDaily(h, min), capitalize(content), "MONTHLY")
             }
         }
         return null
