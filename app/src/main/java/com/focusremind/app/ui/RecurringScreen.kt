@@ -140,6 +140,15 @@ fun RecurringScreen(onOpenHome: () -> Unit, onOpenShopping: () -> Unit) {
                                 dao.updateRecurrence(reminder.id, freq)
                                 ReminderAlarmScheduler.schedule(context, reminder.copy(recurrence = freq))
                             }
+                        },
+                        onEdit = { newTitle, newTrigger ->
+                            scope.launch {
+                                dao.updateRecurringDetails(reminder.id, newTitle, newTrigger)
+                                ReminderAlarmScheduler.schedule(
+                                    context,
+                                    reminder.copy(title = newTitle, triggerAt = newTrigger, anchorTime = newTrigger)
+                                )
+                            }
                         }
                     )
                 }
@@ -261,8 +270,12 @@ fun RecurringScreen(onOpenHome: () -> Unit, onOpenShopping: () -> Unit) {
 }
 
 @Composable
-private fun RecurringCard(reminder: Reminder, onDelete: () -> Unit, onChangeFrequency: (String) -> Unit) {
+private fun RecurringCard(reminder: Reminder, onDelete: () -> Unit, onChangeFrequency: (String) -> Unit, onEdit: (String, Long) -> Unit) {
+    val context = LocalContext.current
     var showFreqMenu by remember { mutableStateOf(false) }
+    var showEditDialog by remember { mutableStateOf(false) }
+    var editTitle by remember { mutableStateOf(reminder.title) }
+    var editDateTime by remember { mutableStateOf<Long?>(reminder.triggerAt) }
     val timeFormatted = remember(reminder.triggerAt) {
         SimpleDateFormat("EEEE, d MMM, HH:mm", Locale.getDefault()).format(Date(reminder.triggerAt))
     }
@@ -315,10 +328,91 @@ private fun RecurringCard(reminder: Reminder, onDelete: () -> Unit, onChangeFreq
                         )
                     }
                 }
+                IconButton(onClick = {
+                    editTitle = reminder.title
+                    editDateTime = reminder.triggerAt
+                    showEditDialog = true
+                }) {
+                    Icon(Icons.Default.Edit, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
                 IconButton(onClick = onDelete) {
                     Icon(Icons.Default.Delete, null, tint = MaterialTheme.colorScheme.error)
                 }
             }
         }
+    }
+
+    if (showEditDialog) {
+        val formatted = remember(editDateTime, reminder.recurrence) {
+            editDateTime?.let {
+                if (reminder.recurrence == "DAILY")
+                    SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(it))
+                else
+                    SimpleDateFormat("EEEE, d MMM yyyy, HH:mm", Locale.getDefault()).format(Date(it))
+            }
+        }
+        AlertDialog(
+            onDismissRequest = { showEditDialog = false },
+            title = { Text(stringResource(R.string.edit_reminder)) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    OutlinedTextField(
+                        value = editTitle,
+                        onValueChange = { editTitle = it },
+                        label = { Text(stringResource(R.string.reminder_label)) },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedButton(
+                        onClick = {
+                            val cal = Calendar.getInstance().apply { editDateTime?.let { timeInMillis = it } }
+                            if (reminder.recurrence == "DAILY") {
+                                // Same rule as adding: daily only needs a TIME.
+                                TimePickerDialog(context, { _, hour, minute ->
+                                    val chosen = Calendar.getInstance().apply {
+                                        set(Calendar.HOUR_OF_DAY, hour)
+                                        set(Calendar.MINUTE, minute)
+                                        set(Calendar.SECOND, 0)
+                                        if (timeInMillis <= System.currentTimeMillis()) add(Calendar.DAY_OF_YEAR, 1)
+                                    }
+                                    editDateTime = chosen.timeInMillis
+                                }, cal.get(Calendar.HOUR_OF_DAY), cal.get(Calendar.MINUTE), true).show()
+                            } else {
+                                DatePickerDialog(context, { _, year, month, day ->
+                                    TimePickerDialog(context, { _, hour, minute ->
+                                        val chosen = Calendar.getInstance().apply {
+                                            set(Calendar.YEAR, year)
+                                            set(Calendar.MONTH, month)
+                                            set(Calendar.DAY_OF_MONTH, day)
+                                            set(Calendar.HOUR_OF_DAY, hour)
+                                            set(Calendar.MINUTE, minute)
+                                            set(Calendar.SECOND, 0)
+                                        }
+                                        editDateTime = chosen.timeInMillis
+                                    }, cal.get(Calendar.HOUR_OF_DAY), cal.get(Calendar.MINUTE), true).show()
+                                }, cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH)).show()
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(Icons.Default.CalendarMonth, null, Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text(formatted ?: stringResource(R.string.pick_date_time))
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val trigger = editDateTime ?: return@Button
+                        onEdit(editTitle, trigger)
+                        showEditDialog = false
+                    },
+                    enabled = editTitle.isNotBlank() && editDateTime != null
+                ) { Text(stringResource(R.string.save)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showEditDialog = false }) { Text(stringResource(R.string.cancel)) }
+            }
+        )
     }
 }

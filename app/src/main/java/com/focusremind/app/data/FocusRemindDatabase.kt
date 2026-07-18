@@ -67,6 +67,12 @@ interface ReminderDao {
     @Query("UPDATE reminders SET title = :title, triggerAt = :triggerAt WHERE id = :id")
     suspend fun update(id: Long, title: String, triggerAt: Long)
 
+    // Used when the user manually edits an EXISTING recurring reminder's
+    // title/time — a deliberate re-anchor, unlike snooze() which must never
+    // touch the anchor.
+    @Query("UPDATE reminders SET title = :title, triggerAt = :triggerAt, anchorTime = :triggerAt WHERE id = :id")
+    suspend fun updateRecurringDetails(id: Long, title: String, triggerAt: Long)
+
     @Query("UPDATE reminders SET photoUri = :uri WHERE id = :id")
     suspend fun updatePhoto(id: Long, uri: String?)
 
