@@ -13,6 +13,8 @@
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
 
     <application
         android:name=".FocusRemindApp"
@@ -44,6 +46,15 @@
         <receiver
             android:name=".notification.NotificationActionReceiver"
             android:exported="false" />
+
+        <!-- Foreground service keeping alarm sound/vibration alive in the
+             background — a bare BroadcastReceiver-spawned MediaPlayer has no
+             protection from Android's background execution limits, and gets
+             silenced after ~20-30s on many devices once onReceive() returns. -->
+        <service
+            android:name=".notification.AlarmSoundService"
+            android:exported="false"
+            android:foregroundServiceType="mediaPlayback" />
 
         <!-- Boot receiver - reschedules alarms after reboot -->
         <receiver

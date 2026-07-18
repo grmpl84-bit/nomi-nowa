@@ -6,14 +6,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.media.AudioAttributes
-import android.media.MediaPlayer
-import android.media.RingtoneManager
-import android.net.Uri
 import android.os.Build
-import android.os.VibrationEffect
-import android.os.Vibrator
-import android.os.VibratorManager
 import android.util.Log
 import androidx.core.content.ContextCompat
 import com.focusremind.app.FocusRemindApp
@@ -24,11 +17,11 @@ import kotlinx.coroutines.launch
 
 /**
  * Fired by AlarmManager at the exact scheduled time.
- * Shows a high-priority notification + plays sound via MediaPlayer + vibrates.
- *
- * IMPORTANT: On Android 8+ notification channel controls sound.
- * Since we want user-configurable sounds, we set channel sound=null
- * and play sound DIRECTLY via MediaPlayer (not through notification system).
+ * Shows a high-priority notification, then hands off to AlarmSoundService
+ * (a foreground service) to actually play sound/vibrate — a bare
+ * BroadcastReceiver has no protection from Android's background execution
+ * limits, so playback started directly here would get silenced by the OS
+ * after a short while on many devices.
  */
 class AlarmReceiver : BroadcastReceiver() {
 
@@ -57,14 +50,6 @@ class AlarmReceiver : BroadcastReceiver() {
             }
         }
 
-        val prefs = context.getSharedPreferences("focusremind_settings", Context.MODE_PRIVATE)
-        val vibrationEnabled = prefs.getBoolean("vibration_enabled", true)
-        val soundIndex = prefs.getInt("notification_sound_index", 0)
-        val volume = prefs.getFloat("notification_volume", 0.7f)
-
-        // Get sound URI
-        val soundUri = getSoundByIndex(context, soundIndex)
-
         val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
         // Build notification (amber, always-visible buttons — same style everywhere)
@@ -72,65 +57,14 @@ class AlarmReceiver : BroadcastReceiver() {
         nm.notify(reminderId.toInt(), notification)
         Log.d(TAG, "Notification shown for reminder $reminderId")
 
-        // === PLAY SOUND via MediaPlayer (user's chosen sound) - LOOPING until dismissed ===
-        if (soundUri != null) {
-            try {
-                val player = MediaPlayer().apply {
-                    setAudioAttributes(AudioAttributes.Builder()
-                        .setUsage(AudioAttributes.USAGE_ALARM)
-                        .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                        .build())
-                    setDataSource(context, soundUri)
-                    setVolume(volume, volume)
-                    isLooping = true // LOOP until user dismisses!
-                    prepare()
-                    start()
-                }
-                // Save player reference (keyed by this reminder's ID) so
-                // NotificationActionReceiver can stop THIS one specifically,
-                // without risk of clobbering/being clobbered by another alarm.
-                SoundPlayer.register(reminderId, player = player)
-                Log.d(TAG, "Playing sound (looping): $soundUri at volume $volume")
-            } catch (e: Exception) {
-                Log.w(TAG, "Failed to play custom sound, trying default", e)
-                try {
-                    val defaultUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
-                    val player = MediaPlayer().apply {
-                        setAudioAttributes(AudioAttributes.Builder()
-                            .setUsage(AudioAttributes.USAGE_ALARM)
-                            .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                            .build())
-                        setDataSource(context, defaultUri)
-                        setVolume(volume, volume)
-                        isLooping = true
-                        prepare()
-                        start()
-                    }
-                    SoundPlayer.register(reminderId, player = player)
-                } catch (e2: Exception) {
-                    Log.e(TAG, "Default sound also failed", e2)
-                }
-            }
+        // Hand off sound/vibration to the foreground service — it re-posts
+        // this same notification (satisfying the foreground-service
+        // requirement) and keeps playing reliably in the background.
+        val serviceIntent = Intent(context, AlarmSoundService::class.java).apply {
+            putExtra(AlarmSoundService.EXTRA_REMINDER_ID, reminderId)
+            putExtra(AlarmSoundService.EXTRA_TITLE, title)
         }
-
-        // === VIBRATE (repeating until dismissed) ===
-        if (vibrationEnabled) {
-            try {
-                val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                    (context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager).defaultVibrator
-                } else {
-                    @Suppress("DEPRECATION")
-                    context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
-                }
-                // Repeating vibration: 800ms on, 400ms off, loops from index 0
-                val pattern = longArrayOf(0, 800, 400, 800, 400, 800)
-                vibrator.vibrate(VibrationEffect.createWaveform(pattern, 0)) // 0 = repeat from start
-                SoundPlayer.register(reminderId, vibrator = vibrator)
-                Log.d(TAG, "Vibration started (repeating)")
-            } catch (e: Exception) {
-                Log.w(TAG, "Vibration failed", e)
-            }
-        }
+        ContextCompat.startForegroundService(context, serviceIntent)
 
         // === RECURRING REMINDER: schedule the next occurrence right away ===
         // Done here (not only when user taps "Zrobione") so a daily/weekly
@@ -181,30 +115,6 @@ class AlarmReceiver : BroadcastReceiver() {
                     pendingResult.finish()
                 }
             }
-        }
-    }
-
-    private fun getSoundByIndex(context: Context, index: Int): Uri? {
-        if (index == -1) return null // silence
-        if (index == -2) {
-            // Custom user-picked sound (see SoundPickerScreen.CUSTOM_SOUND_INDEX)
-            val prefs = context.getSharedPreferences("focusremind_settings", Context.MODE_PRIVATE)
-            val uriString = prefs.getString("notification_sound_custom_uri", null)
-            return if (uriString != null) {
-                try { Uri.parse(uriString) } catch (_: Exception) { RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM) }
-            } else {
-                RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
-            }
-        }
-        if (index < 0) return null
-        return try {
-            val rm = RingtoneManager(context)
-            rm.setType(RingtoneManager.TYPE_NOTIFICATION or RingtoneManager.TYPE_ALARM)
-            val cursor = rm.cursor
-            if (cursor.count == 0) RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
-            else rm.getRingtoneUri(index % cursor.count)
-        } catch (_: Exception) {
-            RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
         }
     }
 }

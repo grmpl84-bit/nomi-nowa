@@ -59,6 +59,7 @@ import androidx.core.content.FileProvider
 import com.focusremind.app.FocusRemindApp
 import com.focusremind.app.R
 import com.focusremind.app.data.Reminder
+import com.focusremind.app.notification.AlarmSoundService
 import com.focusremind.app.notification.ReminderAlarmScheduler
 import com.focusremind.app.notification.ReminderNotificationBuilder
 import com.focusremind.app.notification.SoundPlayer
@@ -1049,6 +1050,12 @@ fun HomeScreen(onAddReminder: () -> Unit, onOpenSettings: () -> Unit, onOpenHist
                                 // previously only the notification's own buttons
                                 // could do this.
                                 SoundPlayer.stop(reminder.id)
+                                context.startService(
+                                    Intent(context, AlarmSoundService::class.java).apply {
+                                        action = AlarmSoundService.ACTION_STOP
+                                        putExtra(AlarmSoundService.EXTRA_REMINDER_ID, reminder.id)
+                                    }
+                                )
                                 (context.getSystemService(Context.NOTIFICATION_SERVICE) as android.app.NotificationManager)
                                     .cancel(reminder.id.toInt())
                             }
@@ -1069,6 +1076,12 @@ fun HomeScreen(onAddReminder: () -> Unit, onOpenSettings: () -> Unit, onOpenHist
                                 dao.delete(reminder.id)
                                 ReminderAlarmScheduler.cancel(context, reminder.id)
                                 SoundPlayer.stop(reminder.id)
+                                context.startService(
+                                    Intent(context, AlarmSoundService::class.java).apply {
+                                        action = AlarmSoundService.ACTION_STOP
+                                        putExtra(AlarmSoundService.EXTRA_REMINDER_ID, reminder.id)
+                                    }
+                                )
                                 (context.getSystemService(Context.NOTIFICATION_SERVICE) as android.app.NotificationManager)
                                     .cancel(reminder.id.toInt())
                             }
