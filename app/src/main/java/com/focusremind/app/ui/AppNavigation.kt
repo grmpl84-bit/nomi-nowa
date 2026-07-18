@@ -1,7 +1,10 @@
 package com.focusremind.app.ui
 
 import android.content.Context
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -56,45 +59,52 @@ fun AppNavigation(startWithVoice: Boolean = false, skipSplash: Boolean = false) 
             }
         }
 
-        NavHost(nav, startDestination = "home") {
-            composable("home") {
-                HomeScreen(
-                    onAddReminder = { nav.navigate("voice") },
-                    onOpenSettings = { nav.navigate("settings") },
-                    onOpenHistory = { nav.navigate("history") },
-                    onOpenRecurring = { navigateToTab("recurring") },
-                    onOpenShopping = { navigateToTab("shopping") },
-                    startRecordingImmediately = startWithVoice
-                )
+        Box(Modifier.fillMaxSize()) {
+            NavHost(nav, startDestination = "home") {
+                composable("home") {
+                    HomeScreen(
+                        onAddReminder = { nav.navigate("voice") },
+                        onOpenSettings = { nav.navigate("settings") },
+                        onOpenHistory = { nav.navigate("history") },
+                        onOpenRecurring = { navigateToTab("recurring") },
+                        onOpenShopping = { navigateToTab("shopping") },
+                        startRecordingImmediately = startWithVoice
+                    )
+                }
+                composable("shopping") {
+                    ShoppingListScreen(
+                        onOpenHome = { navigateToTab("home") },
+                        onOpenRecurring = { navigateToTab("recurring") }
+                    )
+                }
+                composable("recurring") {
+                    RecurringScreen(
+                        onOpenHome = { navigateToTab("home") },
+                        onOpenShopping = { navigateToTab("shopping") }
+                    )
+                }
+                composable("voice") {
+                    VoiceScreen(onBack = { nav.popBackStack() })
+                }
+                composable("settings") {
+                    SettingsScreen(
+                        onBack = { nav.popBackStack() },
+                        onOpenSoundPicker = { nav.navigate("sounds") },
+                        onShowOnboarding = { showOnboarding = true }
+                    )
+                }
+                composable("sounds") {
+                    SoundPickerScreen(onBack = { nav.popBackStack() })
+                }
+                composable("history") {
+                    HistoryScreen(onBack = { nav.popBackStack() })
+                }
             }
-            composable("shopping") {
-                ShoppingListScreen(
-                    onOpenHome = { navigateToTab("home") },
-                    onOpenRecurring = { navigateToTab("recurring") }
-                )
-            }
-            composable("recurring") {
-                RecurringScreen(
-                    onOpenHome = { navigateToTab("home") },
-                    onOpenShopping = { navigateToTab("shopping") }
-                )
-            }
-            composable("voice") {
-                VoiceScreen(onBack = { nav.popBackStack() })
-            }
-            composable("settings") {
-                SettingsScreen(
-                    onBack = { nav.popBackStack() },
-                    onOpenSoundPicker = { nav.navigate("sounds") },
-                    onShowOnboarding = { showOnboarding = true }
-                )
-            }
-            composable("sounds") {
-                SoundPickerScreen(onBack = { nav.popBackStack() })
-            }
-            composable("history") {
-                HistoryScreen(onBack = { nav.popBackStack() })
-            }
+
+            // Flying-icon confirmation ("where did that voice command go?"),
+            // rendered above every screen so it plays no matter which tab
+            // was visible when the mic was used.
+            FlyingIconOverlay()
         }
     }
 }
