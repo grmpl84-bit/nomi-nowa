@@ -1115,8 +1115,7 @@ fun ReminderCard(reminder: Reminder, nowTick: Long, onComplete: () -> Unit, onEd
             diff < 0 -> "\u26A0\uFE0F $overdueText"
             diff < 60_000 -> "< 1 min"
             diff < 3_600_000 -> "${diff / 60_000} min"
-            diff < 86_400_000 -> "${diff / 3_600_000}h ${(diff % 3_600_000) / 60_000}m"
-            else -> SimpleDateFormat("EEE d MMM HH:mm", Locale.getDefault()).format(Date(reminder.triggerAt))
+            else -> SimpleDateFormat("EEE HH:mm", Locale.getDefault()).format(Date(reminder.triggerAt))
         }
     }
 
