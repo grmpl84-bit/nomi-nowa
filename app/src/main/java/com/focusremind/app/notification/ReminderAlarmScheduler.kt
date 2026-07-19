@@ -6,7 +6,6 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.util.Log
-import android.widget.Toast
 import androidx.work.*
 import com.focusremind.app.data.Reminder
 import java.text.SimpleDateFormat
@@ -52,15 +51,6 @@ object ReminderAlarmScheduler {
 
         Log.d(TAG, "✅ SCHEDULED: id=${reminder.id}, title='${reminder.title}', " +
                 "at=$timeFormatted, alarm=$alarmMethod, workmanager=OK")
-
-        // Toast confirmation
-        android.os.Handler(android.os.Looper.getMainLooper()).post {
-            Toast.makeText(
-                context,
-                "⏰ Zapisano: $timeFormatted [$alarmMethod]",
-                Toast.LENGTH_LONG
-            ).show()
-        }
     }
 
     private fun scheduleWithAlarmManager(context: Context, reminder: Reminder, triggerTime: Long): String {
