@@ -114,6 +114,20 @@ class AlarmSoundService : Service() {
                 val pattern = longArrayOf(0, 800, 400, 800, 400, 800)
                 vibrator.vibrate(VibrationEffect.createWaveform(pattern, 0))
                 SoundPlayer.register(reminderId, vibrator = vibrator)
+
+                // Safety net: on some devices, the very first vibrate() call
+                // right after waking from deep sleep can silently fail to
+                // actually start. Retry once, shortly after — but ONLY if
+                // this reminder hasn't already been stopped in the meantime,
+                // so tapping "Done"/snooze during that brief window can
+                // never make a vibration come back after being turned off.
+                android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                    if (SoundPlayer.isActive(reminderId)) {
+                        try {
+                            vibrator.vibrate(VibrationEffect.createWaveform(pattern, 0))
+                        } catch (_: Exception) {}
+                    }
+                }, 1500)
                 Log.d(TAG, "Vibration started (repeating)")
             } catch (e: Exception) {
                 Log.w(TAG, "Vibration failed", e)
