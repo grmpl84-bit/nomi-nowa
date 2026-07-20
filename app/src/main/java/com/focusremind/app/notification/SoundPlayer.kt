@@ -23,6 +23,12 @@ object SoundPlayer {
         vibrator?.let { vibrators[reminderId] = it }
     }
 
+    /** True if this reminder's sound/vibration hasn't been stopped yet — used
+     * to make sure a delayed retry never revives something the user already
+     * silenced in the meantime. */
+    fun isActive(reminderId: Long): Boolean =
+        players.containsKey(reminderId) || vibrators.containsKey(reminderId)
+
     fun stop(reminderId: Long) {
         try {
             players[reminderId]?.let {
