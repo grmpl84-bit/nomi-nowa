@@ -15,10 +15,22 @@ object ShoppingListParser {
         RegexOption.IGNORE_CASE
     )
 
+    // Reversed word order: "Do listy zakupów dodaj masło" / "Do zakupów dodaj mleko"
+    private val triggerRegexPlReversed = Regex(
+        """^do\s+(?:listy\s+zakup[oó]w|zakup[oó]w)\s+dodaj\s+(.+?)\.?$""",
+        RegexOption.IGNORE_CASE
+    )
+
     // "Add milk to the shopping list" / "add milk to my grocery list" /
     // "add milk to shopping list" (no article, common in casual speech)
     private val triggerRegexEn = Regex(
         """^add\s+(.+?)\s+to\s+(?:the\s+|my\s+)?(?:shopping|grocery)\s+list\.?$""",
+        RegexOption.IGNORE_CASE
+    )
+
+    // Reversed word order: "To the shopping list add milk"
+    private val triggerRegexEnReversed = Regex(
+        """^to\s+(?:the\s+|my\s+)?(?:shopping|grocery)\s+list\s+add\s+(.+?)\.?$""",
         RegexOption.IGNORE_CASE
     )
 
@@ -29,7 +41,11 @@ object ShoppingListParser {
      */
     fun parse(text: String): String? {
         val trimmed = text.trim()
-        val match = triggerRegexPl.find(trimmed) ?: triggerRegexEn.find(trimmed) ?: return null
+        val match = triggerRegexPl.find(trimmed)
+            ?: triggerRegexPlReversed.find(trimmed)
+            ?: triggerRegexEn.find(trimmed)
+            ?: triggerRegexEnReversed.find(trimmed)
+            ?: return null
         val item = match.groupValues[1].trim()
         if (item.isBlank()) return null
         return item.replaceFirstChar { it.uppercase() }
