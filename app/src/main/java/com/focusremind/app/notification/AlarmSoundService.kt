@@ -48,7 +48,7 @@ class AlarmSoundService : Service() {
             return START_NOT_STICKY
         }
 
-        val title = intent.getStringExtra(EXTRA_TITLE) ?: ""
+        val title = intent?.getStringExtra(EXTRA_TITLE) ?: ""
 
         // Re-post the SAME rich alarm notification here too — this satisfies
         // the "a foreground service must show a notification" requirement
