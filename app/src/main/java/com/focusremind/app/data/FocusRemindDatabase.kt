@@ -34,7 +34,7 @@ data class ShoppingItem(
 
 @Dao
 interface ReminderDao {
-    @Query("SELECT * FROM reminders WHERE isCompleted = 0 ORDER BY triggerAt ASC")
+    @Query("SELECT * FROM reminders WHERE isCompleted = 0 AND recurrence IS NULL ORDER BY triggerAt ASC")
     fun getActive(): Flow<List<Reminder>>
 
     @Query("SELECT * FROM reminders WHERE recurrence IS NOT NULL ORDER BY triggerAt ASC")
