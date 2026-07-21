@@ -1042,8 +1042,25 @@ fun HomeScreen(onAddReminder: () -> Unit, onOpenSettings: () -> Unit, onOpenHist
                         nowTick = nowTick,
                         onComplete = {
                             scope.launch {
-                                dao.complete(reminder.id)
-                                ReminderAlarmScheduler.cancel(context, reminder.id)
+                                if (reminder.recurrence != null) {
+                                    // "Zrobione" on a RECURRING reminder must never just
+                                    // cancel it outright — that would silently kill the
+                                    // whole series (no next cycle would ever get
+                                    // scheduled, yet it kept showing in Cykliczne with a
+                                    // stale, already-passed time, looking like it was
+                                    // still active). Instead: advance to the next cycle,
+                                    // exactly like the alarm firing normally would.
+                                    val anchor = reminder.anchorTime ?: reminder.triggerAt
+                                    val nextTrigger = ReminderAlarmScheduler.nextTriggerTime(anchor, reminder.recurrence)
+                                    dao.advanceRecurrence(reminder.id, nextTrigger)
+                                    ReminderAlarmScheduler.schedule(
+                                        context,
+                                        reminder.copy(triggerAt = nextTrigger, anchorTime = nextTrigger)
+                                    )
+                                } else {
+                                    dao.complete(reminder.id)
+                                    ReminderAlarmScheduler.cancel(context, reminder.id)
+                                }
                                 // Safety net: if the alarm sound was still playing
                                 // (e.g. user found the task on the list instead of
                                 // using the notification), stop it here too —
