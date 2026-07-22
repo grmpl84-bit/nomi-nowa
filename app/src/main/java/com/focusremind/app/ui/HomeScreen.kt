@@ -349,6 +349,11 @@ fun HomeScreen(onAddReminder: () -> Unit, onOpenSettings: () -> Unit, onOpenHist
     }
 
     fun stopAndProcess() {
+        // Same guard as VoiceRecognizerHelper: if results already arrived
+        // (isListening already false), don't call stopListening() again —
+        // that on an already-finished session is what caused a spurious
+        // ERROR_CLIENT (code 5) right after a successful save.
+        if (!isListening) return
         recognizer.stopListening()
     }
 
