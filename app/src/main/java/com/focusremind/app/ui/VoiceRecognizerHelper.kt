@@ -130,6 +130,13 @@ fun rememberVoiceRecognizer(onResult: (String) -> Unit): VoiceRecognizerControll
     }
 
     fun stopAndProcess() {
+        // If onResults/onError already fired (isListening is already false —
+        // e.g. the recognizer auto-detected end-of-speech from silence
+        // before the user actually lifted their finger), calling
+        // stopListening() again on an already-finished session is what
+        // triggered a spurious ERROR_CLIENT (code 5) a moment after a
+        // perfectly successful save.
+        if (!isListening) return
         try { recognizer.stopListening() } catch (_: Exception) {}
     }
 
