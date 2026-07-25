@@ -70,7 +70,10 @@ class ReminderWorker(
                     while (restored <= System.currentTimeMillis()) {
                         restored = ReminderAlarmScheduler.nextTriggerTime(restored, recurrence)
                     }
-                    if (restored != anchor) dao.advanceRecurrence(reminderId, restored)
+                    // ALWAYS write this back — see AlarmReceiver for the
+                    // full explanation of why skipping this when
+                    // restored == anchor was the actual bug.
+                    dao.advanceRecurrence(reminderId, restored)
                     restored
                 }
                 alarmFlags.edit().putBoolean("fired_$reminderId", false).apply()

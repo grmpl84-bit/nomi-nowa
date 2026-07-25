@@ -98,7 +98,16 @@ class AlarmReceiver : BroadcastReceiver() {
                         while (restored <= System.currentTimeMillis()) {
                             restored = ReminderAlarmScheduler.nextTriggerTime(restored, recurrence)
                         }
-                        if (restored != anchor) dao.advanceRecurrence(reminderId, restored)
+                        // ALWAYS write this back — the DB's triggerAt is
+                        // currently still the temporary snoozed value (from
+                        // dao.snooze()), which must be corrected back to the
+                        // real anchor now, regardless of whether the safety
+                        // loop above needed to advance it further or not.
+                        // Skipping this write when restored == anchor was the
+                        // exact bug: the alarm itself still rang on time, but
+                        // the list/Cykliczne screen stayed stuck showing the
+                        // stale snoozed time until the next genuine cycle.
+                        dao.advanceRecurrence(reminderId, restored)
                         restored
                     }
                     // Reset the "already fired" flag so the new cycle's backup Worker works correctly
