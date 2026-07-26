@@ -1,10 +1,12 @@
 package com.focusremind.app.ui
 
+import android.Manifest
 import android.content.Context
 import android.content.Intent
 import android.media.MediaPlayer
 import android.media.RingtoneManager
 import android.net.Uri
+import android.os.Build
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -29,8 +31,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.os.LocaleListCompat
 import com.focusremind.app.R
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.isGranted
+import com.google.accompanist.permissions.rememberPermissionState
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
 @Composable
 fun SettingsScreen(onBack: () -> Unit, onOpenSoundPicker: () -> Unit, onShowOnboarding: () -> Unit) {
     val context = LocalContext.current
@@ -267,6 +272,150 @@ fun SettingsScreen(onBack: () -> Unit, onOpenSoundPicker: () -> Unit, onShowOnbo
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
+            }
+
+            HorizontalDivider()
+
+            // === LOCATION ===
+            Text("\uD83D\uDCCD Lokalizacja", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+            Text(
+                "Przypomnienia mogą odzywać się też po połączeniu z konkretną siecią WiFi (dom/praca) albo Bluetooth samochodu, nie tylko o godzinie.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            val locationPermission = rememberPermissionState(Manifest.permission.ACCESS_FINE_LOCATION)
+            val bluetoothPermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                rememberPermissionState(Manifest.permission.BLUETOOTH_CONNECT)
+            } else null
+
+            var homeSsid by remember { mutableStateOf(prefs.getString("home_wifi_ssid", null)) }
+            var workSsid by remember { mutableStateOf(prefs.getString("work_wifi_ssid", null)) }
+            var carName by remember { mutableStateOf(prefs.getString("car_bt_name", null)) }
+            var wifiDebounce by remember { mutableIntStateOf(prefs.getInt("wifi_debounce_seconds", 180)) }
+            var btDebounce by remember { mutableIntStateOf(prefs.getInt("bt_debounce_seconds", 30)) }
+            var showCarPicker by remember { mutableStateOf(false) }
+
+            fun currentSsid(): String? {
+                val wifiManager = context.applicationContext.getSystemService(Context.WIFI_SERVICE) as android.net.wifi.WifiManager
+                val raw = wifiManager.connectionInfo?.ssid
+                if (raw.isNullOrBlank() || raw == "<unknown ssid>") return null
+                return raw.trim('"')
+            }
+
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text("WiFi (dom / praca)", style = MaterialTheme.typography.titleSmall)
+
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                        Text(homeSsid?.let { "Dom: $it" } ?: "Dom: nie ustawiono", style = MaterialTheme.typography.bodyMedium)
+                        TextButton(onClick = {
+                            if (!locationPermission.status.isGranted) {
+                                locationPermission.launchPermissionRequest()
+                            } else {
+                                val ssid = currentSsid()
+                                if (ssid != null) {
+                                    homeSsid = ssid
+                                    prefs.edit().putString("home_wifi_ssid", ssid).apply()
+                                }
+                            }
+                        }) { Text("Ustaw jako dom") }
+                    }
+
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                        Text(workSsid?.let { "Praca: $it" } ?: "Praca: nie ustawiono", style = MaterialTheme.typography.bodyMedium)
+                        TextButton(onClick = {
+                            if (!locationPermission.status.isGranted) {
+                                locationPermission.launchPermissionRequest()
+                            } else {
+                                val ssid = currentSsid()
+                                if (ssid != null) {
+                                    workSsid = ssid
+                                    prefs.edit().putString("work_wifi_ssid", ssid).apply()
+                                }
+                            }
+                        }) { Text("Ustaw jako pracę") }
+                    }
+
+                    Text(
+                        "Podłącz się najpierw do właściwej sieci, potem dotknij przycisku — zapamiętamy tę sieć.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    Spacer(Modifier.height(4.dp))
+                    Text("Opóźnienie dla WiFi: $wifiDebounce s", style = MaterialTheme.typography.bodySmall)
+                    Slider(
+                        value = wifiDebounce.toFloat(),
+                        onValueChange = { wifiDebounce = it.toInt(); prefs.edit().putInt("wifi_debounce_seconds", it.toInt()).apply() },
+                        valueRange = 30f..600f,
+                        steps = 18
+                    )
+                }
+            }
+
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text("Bluetooth (samochód)", style = MaterialTheme.typography.titleSmall)
+
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                        Text(carName?.let { "Samochód: $it" } ?: "Samochód: nie ustawiono", style = MaterialTheme.typography.bodyMedium)
+                        TextButton(onClick = {
+                            if (bluetoothPermission != null && !bluetoothPermission.status.isGranted) {
+                                bluetoothPermission.launchPermissionRequest()
+                            } else {
+                                showCarPicker = true
+                            }
+                        }) { Text("Wybierz") }
+                    }
+
+                    Spacer(Modifier.height(4.dp))
+                    Text("Opóźnienie dla Bluetooth: $btDebounce s", style = MaterialTheme.typography.bodySmall)
+                    Slider(
+                        value = btDebounce.toFloat(),
+                        onValueChange = { btDebounce = it.toInt(); prefs.edit().putInt("bt_debounce_seconds", it.toInt()).apply() },
+                        valueRange = 5f..180f,
+                        steps = 34
+                    )
+                }
+            }
+
+            if (showCarPicker) {
+                val bluetoothManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as android.bluetooth.BluetoothManager
+                val pairedDevices = try {
+                    bluetoothManager.adapter?.bondedDevices?.toList() ?: emptyList()
+                } catch (_: SecurityException) { emptyList() }
+
+                AlertDialog(
+                    onDismissRequest = { showCarPicker = false },
+                    title = { Text("Wybierz urządzenie") },
+                    text = {
+                        if (pairedDevices.isEmpty()) {
+                            Text("Brak sparowanych urządzeń Bluetooth. Sparuj najpierw samochód w ustawieniach systemowych telefonu.")
+                        } else {
+                            Column {
+                                pairedDevices.forEach { device ->
+                                    val name = try { device.name ?: device.address } catch (_: SecurityException) { device.address }
+                                    TextButton(
+                                        onClick = {
+                                            carName = name
+                                            prefs.edit()
+                                                .putString("car_bt_name", name)
+                                                .putString("car_bt_address", device.address)
+                                                .apply()
+                                            showCarPicker = false
+                                        },
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) { Text(name, modifier = Modifier.fillMaxWidth()) }
+                                }
+                            }
+                        }
+                    },
+                    confirmButton = {},
+                    dismissButton = {
+                        TextButton(onClick = { showCarPicker = false }) { Text(stringResource(R.string.cancel)) }
+                    }
+                )
             }
 
             HorizontalDivider()

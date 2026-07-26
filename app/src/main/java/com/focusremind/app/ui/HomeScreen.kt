@@ -285,6 +285,7 @@ fun HomeScreen(onAddReminder: () -> Unit, onOpenSettings: () -> Unit, onOpenHist
     var manualTitle by remember { mutableStateOf("") }
     var manualMinutes by remember { mutableIntStateOf(0) }
     var manualCustomDateTime by remember { mutableStateOf<Long?>(null) }
+    var manualLocationTrigger by remember { mutableStateOf<String?>(null) }
     var editReminder by remember { mutableStateOf<Reminder?>(null) }
     var editTitle by remember { mutableStateOf("") }
     var editMinutes by remember { mutableIntStateOf(0) }
@@ -725,24 +726,64 @@ fun HomeScreen(onAddReminder: () -> Unit, onOpenSettings: () -> Unit, onOpenHist
                         Spacer(Modifier.width(8.dp))
                         Text(stringResource(R.string.pick_date_time))
                     }
+
+                    HorizontalDivider()
+
+                    Text("Albo miejsce (zamiast godziny)", style = MaterialTheme.typography.titleSmall)
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        FilterChip(
+                            selected = manualLocationTrigger == null,
+                            onClick = { manualLocationTrigger = null },
+                            label = { Text("Brak") }
+                        )
+                        FilterChip(
+                            selected = manualLocationTrigger == "HOME",
+                            onClick = { manualLocationTrigger = "HOME" },
+                            label = { Text("\uD83C\uDFE0 Dom") }
+                        )
+                        FilterChip(
+                            selected = manualLocationTrigger == "WORK",
+                            onClick = { manualLocationTrigger = "WORK" },
+                            label = { Text("\uD83D\uDCBC Praca") }
+                        )
+                        FilterChip(
+                            selected = manualLocationTrigger == "CAR",
+                            onClick = { manualLocationTrigger = "CAR" },
+                            label = { Text("\uD83D\uDE97 Samochód") }
+                        )
+                    }
+                    if (manualLocationTrigger != null) {
+                        Text(
+                            "Wymaga skonfigurowania sieci WiFi/Bluetooth w Ustawieniach → Lokalizacja.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             },
             confirmButton = {
                 Button(
                     onClick = {
+                        val hasTime = manualMinutes > 0 || manualCustomDateTime != null
                         val triggerAt = when {
                             manualCustomDateTime != null -> manualCustomDateTime!!
                             manualMinutes > 0 -> System.currentTimeMillis() + manualMinutes * 60_000L
                             else -> System.currentTimeMillis() + 15 * 60_000L
                         }
                         val title = manualTitle
+                        val locationTrigger = manualLocationTrigger
                         scope.launch {
-                            val id = dao.insert(Reminder(title = title, triggerAt = triggerAt))
-                            ReminderAlarmScheduler.schedule(context, Reminder(id = id, title = title, triggerAt = triggerAt))
+                            val id = dao.insert(Reminder(title = title, triggerAt = triggerAt, locationTrigger = locationTrigger))
+                            // A location-triggered reminder without an explicit
+                            // time doesn't need an AlarmManager alarm at all —
+                            // it fires purely from the location mechanism.
+                            if (locationTrigger == null || hasTime) {
+                                ReminderAlarmScheduler.schedule(context, Reminder(id = id, title = title, triggerAt = triggerAt))
+                            }
                         }
                         showManualAddDialog = false
                     },
-                    enabled = manualTitle.isNotBlank() && (manualMinutes > 0 || manualCustomDateTime != null)
+                    enabled = manualTitle.isNotBlank() && (manualMinutes > 0 || manualCustomDateTime != null || manualLocationTrigger != null)
                 ) { Text(stringResource(R.string.save)) }
             },
             dismissButton = {
@@ -912,6 +953,7 @@ fun HomeScreen(onAddReminder: () -> Unit, onOpenSettings: () -> Unit, onOpenHist
                     manualTitle = ""
                     manualMinutes = 0
                     manualCustomDateTime = null
+                    manualLocationTrigger = null
                     showManualAddDialog = true
                 }) {
                     Icon(Icons.Default.Add, null)
