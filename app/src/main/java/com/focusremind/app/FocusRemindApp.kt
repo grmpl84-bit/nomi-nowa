@@ -9,6 +9,7 @@ import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.os.LocaleListCompat
 import androidx.room.Room
 import com.focusremind.app.data.FocusRemindDatabase
+import com.focusremind.app.location.WifiConnectionObserver
 import java.util.Locale
 
 class FocusRemindApp : Application() {
@@ -24,6 +25,7 @@ class FocusRemindApp : Application() {
             .build()
         createNotificationChannel()
         autoDetectLanguage()
+        WifiConnectionObserver.register(this)
     }
 
     /**

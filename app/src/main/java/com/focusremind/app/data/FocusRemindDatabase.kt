@@ -21,6 +21,10 @@ data class Reminder(
     // schedule. Only advanced when a cycle genuinely completes (the alarm
     // fires normally), never touched by a snooze. Null for one-time reminders.
     val anchorTime: Long? = null,
+    // Optional location context that fires this reminder instead of (or in
+    // addition to) its clock time — "HOME" / "WORK" / "CAR". Null = normal,
+    // time-only reminder.
+    val locationTrigger: String? = null,
     val createdAt: Long = System.currentTimeMillis()
 )
 
@@ -84,6 +88,12 @@ interface ReminderDao {
 
     @Query("SELECT * FROM reminders WHERE id = :id")
     suspend fun getById(id: Long): Reminder?
+
+    @Query("SELECT * FROM reminders WHERE locationTrigger = :trigger AND isCompleted = 0")
+    suspend fun getByLocationTrigger(trigger: String): List<Reminder>
+
+    @Query("UPDATE reminders SET locationTrigger = :trigger WHERE id = :id")
+    suspend fun updateLocationTrigger(id: Long, trigger: String?)
 }
 
 @Dao
@@ -116,7 +126,7 @@ interface ShoppingDao {
     suspend fun clearAll()
 }
 
-@Database(entities = [Reminder::class, ShoppingItem::class], version = 7)
+@Database(entities = [Reminder::class, ShoppingItem::class], version = 8)
 abstract class FocusRemindDatabase : RoomDatabase() {
     abstract fun reminderDao(): ReminderDao
     abstract fun shoppingDao(): ShoppingDao
