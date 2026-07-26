@@ -138,4 +138,8 @@
     <string name="reminder_saved_default_time">Gespeichert (keine Uhrzeit erkannt — in der Liste bearbeiten)</string>
     <string name="recurrence_biweekly">Alle 2 Wochen</string>
     <string name="recurrence_monthly">Jeden Monat</string>
+    <string name="location_home">Zuhause</string>
+    <string name="location_work">Arbeit</string>
+    <string name="location_car">Auto</string>
+    <string name="location_added_toast">Hinzugefügt: %1$s (%2$s)</string>
 </resources>

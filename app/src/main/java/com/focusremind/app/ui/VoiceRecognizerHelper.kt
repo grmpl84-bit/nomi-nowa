@@ -39,6 +39,7 @@ import com.focusremind.app.data.ReminderDao
 import com.focusremind.app.data.ShoppingDao
 import com.focusremind.app.data.ShoppingItem
 import com.focusremind.app.notification.ReminderAlarmScheduler
+import com.focusremind.app.speech.LocationVoiceParser
 import com.focusremind.app.speech.RecurringVoiceParser
 import com.focusremind.app.speech.ShoppingListParser
 import com.focusremind.app.speech.TimeParser
@@ -238,6 +239,31 @@ fun handleUniversalVoiceInput(
                     context, context.getString(R.string.shopping_added_toast, shoppingItemName), android.widget.Toast.LENGTH_SHORT
                 ).show()
             }
+        }
+        return
+    }
+
+    val locationResult = LocationVoiceParser.parse(text)
+    if (locationResult != null) {
+        scope.launch {
+            val id = dao.insert(
+                Reminder(
+                    title = locationResult.cleanedText,
+                    triggerAt = System.currentTimeMillis(), // placeholder — not used, no AlarmManager alarm is scheduled
+                    isVoiceCreated = true,
+                    originalVoiceText = text,
+                    locationTrigger = locationResult.locationTrigger
+                )
+            )
+            FlightBus.destination = "home"
+            val placeLabel = when (locationResult.locationTrigger) {
+                "HOME" -> context.getString(R.string.location_home)
+                "WORK" -> context.getString(R.string.location_work)
+                else -> context.getString(R.string.location_car)
+            }
+            android.widget.Toast.makeText(
+                context, context.getString(R.string.location_added_toast, locationResult.cleanedText, placeLabel), android.widget.Toast.LENGTH_LONG
+            ).show()
         }
         return
     }

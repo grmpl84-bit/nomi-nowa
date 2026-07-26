@@ -26,6 +26,7 @@ import com.focusremind.app.FocusRemindApp
 import com.focusremind.app.R
 import com.focusremind.app.data.Reminder
 import com.focusremind.app.notification.ReminderAlarmScheduler
+import com.focusremind.app.speech.LocationVoiceParser
 import com.focusremind.app.speech.RecurringVoiceParser
 import com.focusremind.app.speech.ShoppingListParser
 import com.focusremind.app.speech.TimeParser
@@ -91,6 +92,32 @@ fun VoiceScreen(onBack: () -> Unit) {
                                 context, context.getString(R.string.shopping_added_toast, shoppingItemName), android.widget.Toast.LENGTH_SHORT
                             ).show()
                         }
+                        onBack()
+                    }
+                    return
+                }
+
+                // Location-triggered reminder commands ("jak będę w domu...")
+                val locationResult = LocationVoiceParser.parse(text)
+                if (locationResult != null) {
+                    scope.launch {
+                        val id = dao.insert(
+                            Reminder(
+                                title = locationResult.cleanedText,
+                                triggerAt = System.currentTimeMillis(),
+                                isVoiceCreated = true,
+                                originalVoiceText = text,
+                                locationTrigger = locationResult.locationTrigger
+                            )
+                        )
+                        val placeLabel = when (locationResult.locationTrigger) {
+                            "HOME" -> context.getString(R.string.location_home)
+                            "WORK" -> context.getString(R.string.location_work)
+                            else -> context.getString(R.string.location_car)
+                        }
+                        android.widget.Toast.makeText(
+                            context, context.getString(R.string.location_added_toast, locationResult.cleanedText, placeLabel), android.widget.Toast.LENGTH_LONG
+                        ).show()
                         onBack()
                     }
                     return
