@@ -138,4 +138,8 @@
     <string name="reminder_saved_default_time">Zapisano (bez rozpoznanej godziny — edytuj na liście)</string>
     <string name="recurrence_biweekly">Co 2 tygodnie</string>
     <string name="recurrence_monthly">Co miesiąc</string>
+    <string name="location_home">Dom</string>
+    <string name="location_work">Praca</string>
+    <string name="location_car">Samochód</string>
+    <string name="location_added_toast">Dodano: %1$s (%2$s)</string>
 </resources>

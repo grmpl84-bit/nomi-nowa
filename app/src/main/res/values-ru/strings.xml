@@ -138,4 +138,8 @@
     <string name="reminder_saved_default_time">Сохранено (время не распознано — отредактируйте в списке)</string>
     <string name="recurrence_biweekly">Каждые 2 недели</string>
     <string name="recurrence_monthly">Каждый месяц</string>
+    <string name="location_home">Дом</string>
+    <string name="location_work">Работа</string>
+    <string name="location_car">Машина</string>
+    <string name="location_added_toast">Добавлено: %1$s (%2$s)</string>
 </resources>
