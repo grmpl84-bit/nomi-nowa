@@ -15,9 +15,12 @@ object ShoppingListParser {
         RegexOption.IGNORE_CASE
     )
 
-    // Reversed word order: "Do listy zakupów dodaj masło" / "Do zakupów dodaj mleko"
+    // Reversed word order: "Do listy zakupów dodaj masło" / "Do zakupów dodaj mleko".
+    // The optional comma matters in practice — speech recognition often
+    // inserts one at the natural pause right after "zakupów", which the
+    // earlier version of this pattern didn't tolerate.
     private val triggerRegexPlReversed = Regex(
-        """^do\s+(?:listy\s+zakup[oó]w|zakup[oó]w)\s+dodaj\s+(.+?)\.?$""",
+        """^do\s+(?:listy\s+zakup[oó]w|zakup[oó]w),?\s+dodaj\s+(.+?)\.?$""",
         RegexOption.IGNORE_CASE
     )
 
@@ -28,9 +31,10 @@ object ShoppingListParser {
         RegexOption.IGNORE_CASE
     )
 
-    // Reversed word order: "To the shopping list add milk"
+    // Reversed word order: "To the shopping list add milk" — same optional
+    // comma tolerance as the Polish version, for the same reason.
     private val triggerRegexEnReversed = Regex(
-        """^to\s+(?:the\s+|my\s+)?(?:shopping|grocery)\s+list\s+add\s+(.+?)\.?$""",
+        """^to\s+(?:the\s+|my\s+)?(?:shopping|grocery)\s+list,?\s+add\s+(.+?)\.?$""",
         RegexOption.IGNORE_CASE
     )
 
