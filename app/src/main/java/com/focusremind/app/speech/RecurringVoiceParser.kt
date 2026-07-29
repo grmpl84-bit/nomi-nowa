@@ -109,6 +109,18 @@ object RecurringVoiceParser {
                 }
             }
         }
+        // "co piątek o [godzina] [treść]" / "co sobotę o..." — very common
+        // everyday Polish phrasing for the exact same thing as "w każdy
+        // [dzień]" above; reuses the same day-name map (already has the
+        // correct grammatical case for each day, e.g. "sobotę" not "sobota").
+        for ((day, calDay) in plDayNames) {
+            Regex("""^co\s+$day\s+o\s+(\S+)\s+(.+)$""").find(lower)?.let { m ->
+                parseClockTime(m.groupValues[1])?.let { (h, min) ->
+                    val content = m.groupValues[2]
+                    if (content.isNotBlank()) return Result(triggerForNextDayOfWeek(calDay, h, min), capitalize(content), "WEEKLY")
+                }
+            }
+        }
         // "codziennie o [godzina] [treść]" -> DAILY
         Regex("""^codziennie\s+o\s+(\S+)\s+(.+)$""").find(lower)?.let { m ->
             parseClockTime(m.groupValues[1])?.let { (h, min) ->
