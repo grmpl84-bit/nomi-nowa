@@ -29,11 +29,25 @@ class NotificationActionReceiver : BroadcastReceiver() {
         // remove itself from the foreground — harmless if the service isn't
         // actually running for this reminder (e.g. it fired via the backup
         // Worker path instead), Android just starts-and-immediately-stops it.
-        val stopIntent = Intent(context, AlarmSoundService::class.java).apply {
-            action = AlarmSoundService.ACTION_STOP
-            putExtra(AlarmSoundService.EXTRA_REMINDER_ID, reminderId)
+        //
+        // CRITICAL: wrapped in try-catch. This call was previously
+        // unprotected — if it threw (e.g. a background-service-start
+        // restriction on some device/timing), the WHOLE onReceive() crashed
+        // right here, before EVER reaching the notification cancel or the
+        // database update below. The notification could still appear to
+        // disappear from Android's own default dismiss-on-action-tap
+        // behavior, creating the illusion that the button worked when
+        // nothing in our code actually ran — exactly matching a report of
+        // 'notification went away but nothing else happened'.
+        try {
+            val stopIntent = Intent(context, AlarmSoundService::class.java).apply {
+                action = AlarmSoundService.ACTION_STOP
+                putExtra(AlarmSoundService.EXTRA_REMINDER_ID, reminderId)
+            }
+            context.startService(stopIntent)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to stop AlarmSoundService for $reminderId", e)
         }
-        context.startService(stopIntent)
 
         // Dismiss notification — safety net in case the service wasn't
         // running for this reminder (backup Worker path posts directly).

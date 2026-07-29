@@ -1114,12 +1114,14 @@ fun HomeScreen(onAddReminder: () -> Unit, onOpenSettings: () -> Unit, onOpenHist
                                 // previously only the notification's own buttons
                                 // could do this.
                                 SoundPlayer.stop(reminder.id)
-                                context.startService(
-                                    Intent(context, AlarmSoundService::class.java).apply {
-                                        action = AlarmSoundService.ACTION_STOP
-                                        putExtra(AlarmSoundService.EXTRA_REMINDER_ID, reminder.id)
-                                    }
-                                )
+                                try {
+                                    context.startService(
+                                        Intent(context, AlarmSoundService::class.java).apply {
+                                            action = AlarmSoundService.ACTION_STOP
+                                            putExtra(AlarmSoundService.EXTRA_REMINDER_ID, reminder.id)
+                                        }
+                                    )
+                                } catch (_: Exception) {}
                                 (context.getSystemService(Context.NOTIFICATION_SERVICE) as android.app.NotificationManager)
                                     .cancel(reminder.id.toInt())
                             }
@@ -1140,12 +1142,14 @@ fun HomeScreen(onAddReminder: () -> Unit, onOpenSettings: () -> Unit, onOpenHist
                                 dao.delete(reminder.id)
                                 ReminderAlarmScheduler.cancel(context, reminder.id)
                                 SoundPlayer.stop(reminder.id)
-                                context.startService(
-                                    Intent(context, AlarmSoundService::class.java).apply {
-                                        action = AlarmSoundService.ACTION_STOP
-                                        putExtra(AlarmSoundService.EXTRA_REMINDER_ID, reminder.id)
-                                    }
-                                )
+                                try {
+                                    context.startService(
+                                        Intent(context, AlarmSoundService::class.java).apply {
+                                            action = AlarmSoundService.ACTION_STOP
+                                            putExtra(AlarmSoundService.EXTRA_REMINDER_ID, reminder.id)
+                                        }
+                                    )
+                                } catch (_: Exception) {}
                                 (context.getSystemService(Context.NOTIFICATION_SERVICE) as android.app.NotificationManager)
                                     .cancel(reminder.id.toInt())
                             }
