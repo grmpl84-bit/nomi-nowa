@@ -547,6 +547,20 @@ object TimeParser {
         // że w piątek mam wizytę" — "piątek" describes the appointment, not
         // when to be reminded).
 
+        // "za godzinę i 20 minut" / "za 2 godziny i 30 minut" — MUST be
+        // checked before the generic "za X minut" pattern below: that one's
+        // lazy match would otherwise greedily capture "godzinę i 20" as its
+        // number-group, and extractNumber() would only find the digit "20"
+        // in it — silently dropping the hour entirely (reported bug: "za
+        // godzinę i 20 minut" was saved as just "in 20 minutes").
+        Regex("""za\s+(?:(\S+)\s+)?godzin(?:ę|y|ą|e)?\s+i\s+(\S+)\s*minut""").find(text)?.let { m ->
+            val hourPart = m.groupValues[1]
+            val hours = if (hourPart.isBlank()) 1 else (extractNumber(hourPart) ?: 1)
+            val minutes = extractNumber(m.groupValues[2]) ?: 0
+            val totalMs = hours * 3_600_000L + minutes * 60_000L
+            return Result(System.currentTimeMillis() + totalMs, text.replace(m.value, "").trim())
+        }
+
         // "za X minut/minutę/minuty"
         Regex("""za\s+(.+?)\s*min(?:ut[ęy]?[ęe]?)?""").find(text)?.let {
             val num = extractNumber(it.groupValues[1])
