@@ -84,6 +84,12 @@
             </intent-filter>
         </receiver>
 
+        <!-- Periodic AlarmManager-based safety net for WiFi (home/work)
+             detection — see LocationBackupCheckReceiver for why this exists. -->
+        <receiver
+            android:name=".location.LocationBackupCheckReceiver"
+            android:exported="false" />
+
         <!-- Widget -->
         <receiver
             android:name=".widget.ReminderWidget"
