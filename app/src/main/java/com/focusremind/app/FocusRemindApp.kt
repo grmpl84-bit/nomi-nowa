@@ -26,6 +26,7 @@ class FocusRemindApp : Application() {
         createNotificationChannel()
         autoDetectLanguage()
         WifiConnectionObserver.register(this)
+        com.focusremind.app.location.LocationBackupScheduler.scheduleNext(this)
     }
 
     /**

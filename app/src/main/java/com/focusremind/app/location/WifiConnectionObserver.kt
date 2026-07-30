@@ -39,10 +39,13 @@ object WifiConnectionObserver {
 
             override fun onLost(network: Network) {
                 // Left WiFi range entirely (any network) — cancel any pending
-                // checks for both home and work, whichever might be running.
+                // checks for both home and work, and mark both "not present"
+                // so the NEXT arrival is treated as new (not a continued stay).
                 Log.d(TAG, "WiFi lost — cancelling pending home/work checks")
                 LocationTriggerScheduler.cancelCheck(appContext, "HOME")
                 LocationTriggerScheduler.cancelCheck(appContext, "WORK")
+                LocationFirer.markAbsent(appContext, "HOME")
+                LocationFirer.markAbsent(appContext, "WORK")
             }
         })
     }
@@ -76,6 +79,8 @@ object WifiConnectionObserver {
                 // Connected to some OTHER network — neither home nor work.
                 LocationTriggerScheduler.cancelCheck(context, "HOME")
                 LocationTriggerScheduler.cancelCheck(context, "WORK")
+                LocationFirer.markAbsent(context, "HOME")
+                LocationFirer.markAbsent(context, "WORK")
             }
         }
     }
