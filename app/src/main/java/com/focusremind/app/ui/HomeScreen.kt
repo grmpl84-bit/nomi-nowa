@@ -1177,17 +1177,27 @@ fun HomeScreen(onAddReminder: () -> Unit, onOpenSettings: () -> Unit, onOpenHist
 @Composable
 fun ReminderCard(reminder: Reminder, nowTick: Long, onComplete: () -> Unit, onEdit: () -> Unit, onSnooze: () -> Unit, onDelete: () -> Unit, onAddPhoto: () -> Unit, onLockedDeleteTap: () -> Unit, onOpenPhoto: () -> Unit) {
     val overdueText = stringResource(R.string.overdue)
-    val timeText = remember(reminder.triggerAt, nowTick) {
-        val diff = reminder.triggerAt - System.currentTimeMillis()
-        when {
-            diff < 0 -> "\u26A0\uFE0F $overdueText"
-            diff < 60_000 -> "< 1 min"
-            diff < 3_600_000 -> "${diff / 60_000} min"
-            else -> SimpleDateFormat("EEE HH:mm", Locale.getDefault()).format(Date(reminder.triggerAt))
+    val locationHomeText = stringResource(R.string.location_home)
+    val locationWorkText = stringResource(R.string.location_work)
+    val locationCarText = stringResource(R.string.location_car)
+    val timeText = remember(reminder.triggerAt, nowTick, reminder.locationTrigger) {
+        when (reminder.locationTrigger) {
+            "HOME" -> "\uD83C\uDFE0 $locationHomeText"
+            "WORK" -> "\uD83D\uDCBC $locationWorkText"
+            "CAR" -> "\uD83D\uDE97 $locationCarText"
+            else -> {
+                val diff = reminder.triggerAt - System.currentTimeMillis()
+                when {
+                    diff < 0 -> "\u26A0\uFE0F $overdueText"
+                    diff < 60_000 -> "< 1 min"
+                    diff < 3_600_000 -> "${diff / 60_000} min"
+                    else -> SimpleDateFormat("EEE HH:mm", Locale.getDefault()).format(Date(reminder.triggerAt))
+                }
+            }
         }
     }
 
-    val isOverdue = reminder.triggerAt < System.currentTimeMillis()
+    val isOverdue = reminder.locationTrigger == null && reminder.triggerAt < System.currentTimeMillis()
 
     Card(
         Modifier.fillMaxWidth(),
