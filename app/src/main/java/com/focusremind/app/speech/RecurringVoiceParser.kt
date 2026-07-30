@@ -108,6 +108,14 @@ object RecurringVoiceParser {
                     if (content.isNotBlank()) return Result(triggerForNextDayOfWeek(calDay, h, min), capitalize(content), "WEEKLY")
                 }
             }
+            // Same trigger, but a part-of-day word instead of a clock time
+            // ("w każdy piątek rano ..." / "w każdą sobotę wieczorem ...").
+            for ((part, hour) in plDayParts.entries.sortedByDescending { it.key.length }) {
+                Regex("""^w\s+każd[ąy]\s+$day\s+$part\s+(.+)$""").find(lower)?.let { m ->
+                    val content = m.groupValues[1]
+                    if (content.isNotBlank()) return Result(triggerForNextDayOfWeek(calDay, hour, 0), capitalize(content), "WEEKLY")
+                }
+            }
         }
         // "co piątek o [godzina] [treść]" / "co sobotę o..." — very common
         // everyday Polish phrasing for the exact same thing as "w każdy
@@ -118,6 +126,18 @@ object RecurringVoiceParser {
                 parseClockTime(m.groupValues[1])?.let { (h, min) ->
                     val content = m.groupValues[2]
                     if (content.isNotBlank()) return Result(triggerForNextDayOfWeek(calDay, h, min), capitalize(content), "WEEKLY")
+                }
+            }
+            // Same trigger, but a part-of-day word instead of a clock time
+            // ("co sobotę rano ..." / "co piątek wieczorem ...") — this was
+            // the actual gap behind a reported bug: only the explicit-clock
+            // variant was supported, so a natural sentence using "rano"/
+            // "wieczorem" instead of a number silently fell through to a
+            // regular one-time reminder instead of a recurring one.
+            for ((part, hour) in plDayParts.entries.sortedByDescending { it.key.length }) {
+                Regex("""^co\s+$day\s+$part\s+(.+)$""").find(lower)?.let { m ->
+                    val content = m.groupValues[1]
+                    if (content.isNotBlank()) return Result(triggerForNextDayOfWeek(calDay, hour, 0), capitalize(content), "WEEKLY")
                 }
             }
         }
