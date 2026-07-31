@@ -285,6 +285,9 @@ fun SettingsScreen(onBack: () -> Unit, onOpenSoundPicker: () -> Unit, onShowOnbo
             )
 
             val locationPermission = rememberPermissionState(Manifest.permission.ACCESS_FINE_LOCATION)
+            val backgroundLocationPermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                rememberPermissionState(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+            } else null
             val bluetoothPermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 rememberPermissionState(Manifest.permission.BLUETOOTH_CONNECT)
             } else null
@@ -301,6 +304,32 @@ fun SettingsScreen(onBack: () -> Unit, onOpenSoundPicker: () -> Unit, onShowOnbo
                 val raw = wifiManager.connectionInfo?.ssid
                 if (raw.isNullOrBlank() || raw == "<unknown ssid>") return null
                 return raw.trim('"')
+            }
+
+            if (backgroundLocationPermission != null &&
+                locationPermission.status.isGranted &&
+                !backgroundLocationPermission.status.isGranted
+            ) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)
+                ) {
+                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(
+                            "⚠️ Wymagane dodatkowe uprawnienie",
+                            style = MaterialTheme.typography.titleSmall,
+                            color = MaterialTheme.colorScheme.onErrorContainer
+                        )
+                        Text(
+                            "Wykrywanie sieci WiFi w tle (bez otwartej aplikacji) wymaga uprawnienia \"Zezwalaj zawsze\", nie tylko \"podczas używania\". Bez tego przypomnienia dom/praca mogą się nie odpalać.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onErrorContainer
+                        )
+                        TextButton(onClick = { backgroundLocationPermission.launchPermissionRequest() }) {
+                            Text("Ustaw \"Zezwalaj zawsze\"")
+                        }
+                    }
+                }
             }
 
             Card(modifier = Modifier.fillMaxWidth()) {
