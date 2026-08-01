@@ -143,7 +143,7 @@
     <string name="location_car">Voiture</string>
     <string name="location_added_toast">Ajouté : %1$s (%2$s)</string>
     <string name="onboarding_location_title">Rappels maison / travail</string>
-    <string name="onboarding_location_desc">Si tu veux que Nomi te rappelle quelque chose exactement quand tu rentres chez toi ou arrives au travail — appuie sur le bouton ci-dessous. Une étape supplémentaire peut être nécessaire : d'abord autoriser la position, puis la régler sur "Toujours autoriser" (pas seulement "pendant l'utilisation"). Sinon ces rappels risquent de ne pas se déclencher, téléphone en poche.</string>
+    <string name="onboarding_location_desc">Si tu veux que Nomi te rappelle quelque chose exactement quand tu rentres chez toi ou arrives au travail — appuie sur le bouton ci-dessous. Une étape supplémentaire peut être nécessaire : d\'abord autoriser la position, puis la régler sur "Toujours autoriser" (pas seulement "pendant l\'utilisation"). Sinon ces rappels risquent de ne pas se déclencher, téléphone en poche.</string>
     <string name="onboarding_location_button">Ouvrir les paramètres</string>
     <string name="onboarding_location_button_step1">Autoriser la position</string>
 </resources>
