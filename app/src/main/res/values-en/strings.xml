@@ -143,6 +143,7 @@
     <string name="location_car">Car</string>
     <string name="location_added_toast">Added: %1$s (%2$s)</string>
     <string name="onboarding_location_title">Home / work reminders</string>
-    <string name="onboarding_location_desc">If you want Nomi to remind you about something exactly when you get home or arrive at work — set location access to \"Allow all the time\", not just \"while using the app\". Without it, these reminders may not fire while your phone is in your pocket.</string>
+    <string name="onboarding_location_desc">If you want Nomi to remind you about something exactly when you get home or arrive at work — tap the button below. It may take one extra step: first allowing location, then setting it to "Allow all the time" (not just "while using the app"). Without it, these reminders may not fire while your phone is in your pocket.</string>
     <string name="onboarding_location_button">Open settings</string>
+    <string name="onboarding_location_button_step1">Allow location</string>
 </resources>

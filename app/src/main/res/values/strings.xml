@@ -143,6 +143,7 @@
     <string name="location_car">Samochód</string>
     <string name="location_added_toast">Dodano: %1$s (%2$s)</string>
     <string name="onboarding_location_title">Przypomnienia dom / praca</string>
-    <string name="onboarding_location_desc">Jeśli chcesz, żeby Nomi przypominało Ci o czymś dokładnie wtedy, gdy wrócisz do domu albo dotrzesz do pracy — włącz dla lokalizacji opcję \"Zezwalaj zawsze\", nie tylko \"podczas używania aplikacji\". Bez tego te przypomnienia mogą się nie odpalać, gdy telefon leży w kieszeni.</string>
+    <string name="onboarding_location_desc">Jeśli chcesz, żeby Nomi przypominało Ci o czymś dokładnie wtedy, gdy wrócisz do domu albo dotrzesz do pracy — dotknij przycisku poniżej. Może być potrzebny jeden dodatkowy krok: najpierw pozwolenie na lokalizację, a potem ustawienie jej na "Zezwalaj zawsze" (nie tylko "podczas używania aplikacji"). Bez tego te przypomnienia mogą się nie odpalać, gdy telefon leży w kieszeni.</string>
     <string name="onboarding_location_button">Otwórz ustawienia</string>
+    <string name="onboarding_location_button_step1">Zezwól na lokalizację</string>
 </resources>

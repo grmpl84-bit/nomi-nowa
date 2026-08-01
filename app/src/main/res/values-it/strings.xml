@@ -143,6 +143,7 @@
     <string name="location_car">Auto</string>
     <string name="location_added_toast">Aggiunto: %1$s (%2$s)</string>
     <string name="onboarding_location_title">Promemoria casa / lavoro</string>
-    <string name="onboarding_location_desc">Se vuoi che Nomi ti ricordi qualcosa esattamente quando torni a casa o arrivi al lavoro, imposta l\'accesso alla posizione su \"Consenti sempre\", non solo \"durante l\'utilizzo dell\'app\". Altrimenti questi promemoria potrebbero non attivarsi con il telefono in tasca.</string>
+    <string name="onboarding_location_desc">Se vuoi che Nomi ti ricordi qualcosa esattamente quando torni a casa o arrivi al lavoro, tocca il pulsante qui sotto. Potrebbe servire un passaggio in più: prima consentire la posizione, poi impostarla su "Consenti sempre" (non solo "durante l'utilizzo dell'app"). Altrimenti questi promemoria potrebbero non attivarsi con il telefono in tasca.</string>
     <string name="onboarding_location_button">Apri impostazioni</string>
+    <string name="onboarding_location_button_step1">Consenti posizione</string>
 </resources>
