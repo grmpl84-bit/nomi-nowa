@@ -295,7 +295,6 @@ fun SettingsScreen(onBack: () -> Unit, onOpenSoundPicker: () -> Unit, onShowOnbo
             var homeSsid by remember { mutableStateOf(prefs.getString("home_wifi_ssid", null)) }
             var workSsid by remember { mutableStateOf(prefs.getString("work_wifi_ssid", null)) }
             var carName by remember { mutableStateOf(prefs.getString("car_bt_name", null)) }
-            var btDebounce by remember { mutableIntStateOf(prefs.getInt("bt_debounce_seconds", 30)) }
             var showCarPicker by remember { mutableStateOf(false) }
 
             fun currentSsid(): String? {
@@ -387,15 +386,6 @@ fun SettingsScreen(onBack: () -> Unit, onOpenSoundPicker: () -> Unit, onShowOnbo
                             }
                         }) { Text("Wybierz") }
                     }
-
-                    Spacer(Modifier.height(4.dp))
-                    Text("Opóźnienie dla Bluetooth: $btDebounce s", style = MaterialTheme.typography.bodySmall)
-                    Slider(
-                        value = btDebounce.toFloat(),
-                        onValueChange = { btDebounce = it.toInt(); prefs.edit().putInt("bt_debounce_seconds", it.toInt()).apply() },
-                        valueRange = 5f..180f,
-                        steps = 34
-                    )
                 }
             }
 
