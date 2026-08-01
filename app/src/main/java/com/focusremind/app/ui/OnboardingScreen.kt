@@ -1,7 +1,9 @@
 package com.focusremind.app.ui
 
+import android.Manifest
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.provider.Settings
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.background
@@ -28,11 +30,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.os.LocaleListCompat
 import com.focusremind.app.R
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.isGranted
+import com.google.accompanist.permissions.rememberPermissionState
 import kotlinx.coroutines.launch
 
 private const val TOTAL_PAGES = 6
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
 @Composable
 fun OnboardingScreen(onFinished: () -> Unit) {
     val context = LocalContext.current
@@ -45,6 +50,10 @@ fun OnboardingScreen(onFinished: () -> Unit) {
     val startPage = if (languageAlreadyChosen) 1 else 0
     val pagerState = rememberPagerState(initialPage = startPage, pageCount = { TOTAL_PAGES })
     val scope = rememberCoroutineScope()
+    val fineLocationPermission = rememberPermissionState(Manifest.permission.ACCESS_FINE_LOCATION)
+    val backgroundLocationPermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        rememberPermissionState(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+    } else null
 
     Scaffold { padding ->
         Column(
@@ -130,30 +139,42 @@ fun OnboardingScreen(onFinished: () -> Unit) {
                     )
 
                     // === PAGE 4: LOCATION (always allow) — for home/work
-                    // WiFi reminders. Same pattern as the battery page: no
-                    // universal one-tap deep link to the exact permission
-                    // screen across all OEMs, so open the App Info page,
-                    // from which "Permissions → Location → Always" is one
-                    // more tap away. Explaining WHY up front matters a lot
-                    // here — on some devices (notably Xiaomi/MIUI) the
-                    // system doesn't even offer 'Always' as an option until
-                    // the foreground permission has already been granted at
-                    // least once, so this alone doesn't guarantee success,
-                    // but it's the best a generic onboarding step can do.
-                    4 -> OnboardingPage(
-                        emoji = "\uD83D\uDCCD",
-                        title = stringResource(R.string.onboarding_location_title),
-                        description = stringResource(R.string.onboarding_location_desc),
-                        buttonText = stringResource(R.string.onboarding_location_button),
-                        onButtonClick = {
-                            try {
-                                val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                                    data = android.net.Uri.parse("package:${context.packageName}")
+                    // WiFi reminders. Two-step by necessity (Android
+                    // requires the foreground grant before background can
+                    // even be requested) — the button label and action
+                    // adapt to whichever step is still needed, and
+                    // launchPermissionRequest() for ACCESS_BACKGROUND_LOCATION
+                    // is redirected by Android itself (11+) straight to the
+                    // exact permission screen with "Always" as an option,
+                    // instead of the generic App Info page a plain Settings
+                    // intent would open.
+                    4 -> {
+                        val needsForeground = !fineLocationPermission.status.isGranted
+                        OnboardingPage(
+                            emoji = "\uD83D\uDCCD",
+                            title = stringResource(R.string.onboarding_location_title),
+                            description = stringResource(R.string.onboarding_location_desc),
+                            buttonText = if (needsForeground) {
+                                stringResource(R.string.onboarding_location_button_step1)
+                            } else {
+                                stringResource(R.string.onboarding_location_button)
+                            },
+                            onButtonClick = {
+                                if (needsForeground) {
+                                    fineLocationPermission.launchPermissionRequest()
+                                } else if (backgroundLocationPermission != null) {
+                                    backgroundLocationPermission.launchPermissionRequest()
+                                } else {
+                                    try {
+                                        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                                            data = android.net.Uri.parse("package:${context.packageName}")
+                                        }
+                                        context.startActivity(intent)
+                                    } catch (_: Exception) {}
                                 }
-                                context.startActivity(intent)
-                            } catch (_: Exception) {}
-                        }
-                    )
+                            }
+                        )
+                    }
 
                     // === PAGE 5: DONE ===
                     5 -> OnboardingPage(

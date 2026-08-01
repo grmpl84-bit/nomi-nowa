@@ -143,6 +143,7 @@
     <string name="location_car">Auto</string>
     <string name="location_added_toast">Hinzugefügt: %1$s (%2$s)</string>
     <string name="onboarding_location_title">Erinnerungen zuhause / Arbeit</string>
-    <string name="onboarding_location_desc">Wenn Nomi dich genau dann erinnern soll, wenn du nach Hause kommst oder bei der Arbeit ankommst — stelle den Standortzugriff auf \"Immer zulassen\", nicht nur \"Nur während der Nutzung\". Sonst funktionieren diese Erinnerungen möglicherweise nicht, wenn das Handy in der Tasche liegt.</string>
+    <string name="onboarding_location_desc">Wenn Nomi dich genau dann erinnern soll, wenn du nach Hause kommst oder bei der Arbeit ankommst — tippe unten auf die Schaltfläche. Es kann ein zusätzlicher Schritt nötig sein: erst den Standortzugriff erlauben, dann auf "Immer zulassen" stellen (nicht nur "Nur während der Nutzung"). Sonst funktionieren diese Erinnerungen möglicherweise nicht, wenn das Handy in der Tasche liegt.</string>
     <string name="onboarding_location_button">Einstellungen öffnen</string>
+    <string name="onboarding_location_button_step1">Standort erlauben</string>
 </resources>
