@@ -141,15 +141,23 @@ fun OnboardingScreen(onFinished: () -> Unit) {
                     // === PAGE 4: LOCATION (always allow) — for home/work
                     // WiFi reminders. Two-step by necessity (Android
                     // requires the foreground grant before background can
-                    // even be requested) — the button label and action
-                    // adapt to whichever step is still needed, and
-                    // launchPermissionRequest() for ACCESS_BACKGROUND_LOCATION
-                    // is redirected by Android itself (11+) straight to the
-                    // exact permission screen with "Always" as an option,
-                    // instead of the generic App Info page a plain Settings
-                    // intent would open.
+                    // even be requested) — but chained automatically here:
+                    // the moment foreground becomes granted, we immediately
+                    // fire the background request too, so one tap on this
+                    // page (plus the resulting system dialogs) is enough —
+                    // no separate trip to Settings needed afterward.
                     4 -> {
                         val needsForeground = !fineLocationPermission.status.isGranted
+
+                        LaunchedEffect(fineLocationPermission.status.isGranted) {
+                            if (fineLocationPermission.status.isGranted &&
+                                backgroundLocationPermission != null &&
+                                !backgroundLocationPermission.status.isGranted
+                            ) {
+                                backgroundLocationPermission.launchPermissionRequest()
+                            }
+                        }
+
                         OnboardingPage(
                             emoji = "\uD83D\uDCCD",
                             title = stringResource(R.string.onboarding_location_title),
