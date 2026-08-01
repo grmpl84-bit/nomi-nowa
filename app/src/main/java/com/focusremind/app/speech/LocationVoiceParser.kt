@@ -17,8 +17,14 @@ object LocationVoiceParser {
     private val plPatterns = listOf(
         Regex("""^(?:jak|gdy|kiedy)\s+będę\s+w\s+domu,?\s+(.+)$""", RegexOption.IGNORE_CASE) to "HOME",
         Regex("""^(?:jak|gdy|kiedy)\s+wrócę\s+do\s+domu,?\s+(.+)$""", RegexOption.IGNORE_CASE) to "HOME",
+        Regex("""^(?:jak|gdy|kiedy)\s+dojadę\s+do\s+domu,?\s+(.+)$""", RegexOption.IGNORE_CASE) to "HOME",
+        Regex("""^(?:jak|gdy|kiedy)\s+dojdę\s+do\s+domu,?\s+(.+)$""", RegexOption.IGNORE_CASE) to "HOME",
+        Regex("""^w\s+domu,?\s+(.+)$""", RegexOption.IGNORE_CASE) to "HOME",
         Regex("""^(?:jak|gdy|kiedy)\s+będę\s+w\s+pracy,?\s+(.+)$""", RegexOption.IGNORE_CASE) to "WORK",
         Regex("""^(?:jak|gdy|kiedy)\s+dotrę\s+do\s+pracy,?\s+(.+)$""", RegexOption.IGNORE_CASE) to "WORK",
+        Regex("""^(?:jak|gdy|kiedy)\s+dojadę\s+do\s+pracy,?\s+(.+)$""", RegexOption.IGNORE_CASE) to "WORK",
+        Regex("""^(?:jak|gdy|kiedy)\s+dojdę\s+do\s+pracy,?\s+(.+)$""", RegexOption.IGNORE_CASE) to "WORK",
+        Regex("""^w\s+pracy,?\s+(.+)$""", RegexOption.IGNORE_CASE) to "WORK",
         Regex("""^(?:jak|gdy|kiedy)\s+będę\s+w\s+samochodzie,?\s+(.+)$""", RegexOption.IGNORE_CASE) to "CAR",
         Regex("""^(?:jak|gdy|kiedy)\s+wsiądę\s+do\s+samochodu,?\s+(.+)$""", RegexOption.IGNORE_CASE) to "CAR"
     )
