@@ -142,4 +142,7 @@
     <string name="location_work">Trabajo</string>
     <string name="location_car">Coche</string>
     <string name="location_added_toast">Añadido: %1$s (%2$s)</string>
+    <string name="onboarding_location_title">Recordatorios casa / trabajo</string>
+    <string name="onboarding_location_desc">Si quieres que Nomi te recuerde algo justo cuando llegues a casa o al trabajo, activa el acceso a la ubicación en \"Permitir siempre\", no solo \"mientras se usa la app\". Si no, estos recordatorios pueden no activarse con el móvil en el bolsillo.</string>
+    <string name="onboarding_location_button">Abrir ajustes</string>
 </resources>
