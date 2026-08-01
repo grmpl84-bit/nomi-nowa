@@ -295,7 +295,6 @@ fun SettingsScreen(onBack: () -> Unit, onOpenSoundPicker: () -> Unit, onShowOnbo
             var homeSsid by remember { mutableStateOf(prefs.getString("home_wifi_ssid", null)) }
             var workSsid by remember { mutableStateOf(prefs.getString("work_wifi_ssid", null)) }
             var carName by remember { mutableStateOf(prefs.getString("car_bt_name", null)) }
-            var wifiDebounce by remember { mutableIntStateOf(prefs.getInt("wifi_debounce_seconds", 180)) }
             var btDebounce by remember { mutableIntStateOf(prefs.getInt("bt_debounce_seconds", 30)) }
             var showCarPicker by remember { mutableStateOf(false) }
 
@@ -370,15 +369,6 @@ fun SettingsScreen(onBack: () -> Unit, onOpenSoundPicker: () -> Unit, onShowOnbo
                         "Podłącz się najpierw do właściwej sieci, potem dotknij przycisku — zapamiętamy tę sieć.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-
-                    Spacer(Modifier.height(4.dp))
-                    Text("Opóźnienie dla WiFi: $wifiDebounce s", style = MaterialTheme.typography.bodySmall)
-                    Slider(
-                        value = wifiDebounce.toFloat(),
-                        onValueChange = { wifiDebounce = it.toInt(); prefs.edit().putInt("wifi_debounce_seconds", it.toInt()).apply() },
-                        valueRange = 30f..600f,
-                        steps = 18
                     )
                 }
             }

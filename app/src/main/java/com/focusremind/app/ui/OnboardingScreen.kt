@@ -30,7 +30,7 @@ import androidx.core.os.LocaleListCompat
 import com.focusremind.app.R
 import kotlinx.coroutines.launch
 
-private const val TOTAL_PAGES = 5
+private const val TOTAL_PAGES = 6
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -129,8 +129,34 @@ fun OnboardingScreen(onFinished: () -> Unit) {
                         }
                     )
 
-                    // === PAGE 4: DONE ===
+                    // === PAGE 4: LOCATION (always allow) — for home/work
+                    // WiFi reminders. Same pattern as the battery page: no
+                    // universal one-tap deep link to the exact permission
+                    // screen across all OEMs, so open the App Info page,
+                    // from which "Permissions → Location → Always" is one
+                    // more tap away. Explaining WHY up front matters a lot
+                    // here — on some devices (notably Xiaomi/MIUI) the
+                    // system doesn't even offer 'Always' as an option until
+                    // the foreground permission has already been granted at
+                    // least once, so this alone doesn't guarantee success,
+                    // but it's the best a generic onboarding step can do.
                     4 -> OnboardingPage(
+                        emoji = "\uD83D\uDCCD",
+                        title = stringResource(R.string.onboarding_location_title),
+                        description = stringResource(R.string.onboarding_location_desc),
+                        buttonText = stringResource(R.string.onboarding_location_button),
+                        onButtonClick = {
+                            try {
+                                val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                                    data = android.net.Uri.parse("package:${context.packageName}")
+                                }
+                                context.startActivity(intent)
+                            } catch (_: Exception) {}
+                        }
+                    )
+
+                    // === PAGE 5: DONE ===
+                    5 -> OnboardingPage(
                         emoji = "\uD83D\uDE80",
                         title = stringResource(R.string.onboarding_done_title),
                         description = stringResource(R.string.onboarding_done_desc),
