@@ -292,6 +292,19 @@ fun SettingsScreen(onBack: () -> Unit, onOpenSoundPicker: () -> Unit, onShowOnbo
                 rememberPermissionState(Manifest.permission.BLUETOOTH_CONNECT)
             } else null
 
+            // Same auto-chain as onboarding: the moment the foreground grant
+            // lands (from tapping "Ustaw jako dom/pracę" below, or from the
+            // onboarding step earlier), immediately follow up with the
+            // background request too — no separate manual second tap needed.
+            LaunchedEffect(locationPermission.status.isGranted) {
+                if (locationPermission.status.isGranted &&
+                    backgroundLocationPermission != null &&
+                    !backgroundLocationPermission.status.isGranted
+                ) {
+                    backgroundLocationPermission.launchPermissionRequest()
+                }
+            }
+
             var homeSsid by remember { mutableStateOf(prefs.getString("home_wifi_ssid", null)) }
             var workSsid by remember { mutableStateOf(prefs.getString("work_wifi_ssid", null)) }
             var carName by remember { mutableStateOf(prefs.getString("car_bt_name", null)) }
